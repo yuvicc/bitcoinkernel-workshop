@@ -1,1 +1,1 @@
-# Bitcoinkernel Workshop Bitdevs Summit Dharamshala
+# Bitcoinkernel Workshop Bitdevs Summit Jaipur
