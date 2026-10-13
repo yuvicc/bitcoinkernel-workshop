@@ -1,4 +1,4 @@
-# Bitcoinkernel Workshop Bitdevs Summit Jaipur
+# Bitcoinkernel Workshop BOSS Summit Jaipur
 
 Slides and hands-on exercises for a ~90 minute workshop on
 [libbitcoinkernel](https://github.com/bitcoin/bitcoin/issues/27587) using
