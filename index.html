@@ -545,8 +545,7 @@
     </div>
   </div>
   <aside class="notes">
-    <p>The repo ships mainnet blocks 1 through 170 as hex in <code>workshop/data/blocks.hex</code>, so nobody needs network access or a synced node.</p>
-    <p>Every exercise is a binary: <code>ex1_context</code> … <code>ex4_verify</code>, with matching <code>*_solution</code> binaries if you get stuck.</p>
+    <p>The repo ships mainnet blocks 1 through 170, so nobody needs network access or a synced node.</p>
   </aside>
 </section>
 
@@ -563,7 +562,7 @@
         <li><code>context.interrupt()</code> stops long operations</li>
       </ul>
     </div>
-    <div class="code" data-title="src/bin/ex1_solution.rs">
+    <div class="code" data-title="context">
       <script type="text/plain" data-lang="rust" data-hl="4-6,10-13">
         use bitcoinkernel::{ChainType, ContextBuilder, KernelError};
 
@@ -666,17 +665,15 @@
 
 <!-- 25 · Exercise 1 -->
 <section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
-  <h2>Boot the engine</h2>
+  <h2>Start the kernel</h2>
   <div class="two-col wide-left">
     <div class="exercise-box">
-      <h3><code>src/bin/ex1_context.rs</code></h3>
       <ol class="mt-s">
         <li>Create a <code>Logger</code> that prints kernel messages with a prefix</li>
         <li>Build a <b>mainnet</b> <code>Context</code></li>
         <li>Register <code>block_tip</code>, <code>progress</code> and <code>fatal_error</code> notifications</li>
         <li>Open a <code>ChainstateManager</code> in <code>./kernel-data</code> and print the tip height</li>
       </ol>
-      <div class="run">cargo run --bin ex1_context</div>
     </div>
     <div class="center" style="gap:26px">
       <div class="callout green"><span class="label">Expect</span>Kernel log lines, then <code>tip height: 0</code>. A fresh chainstate already knows genesis.</div>
@@ -762,15 +759,13 @@
   <h2>Validate the first 170 blocks</h2>
   <div class="two-col wide-left">
     <div class="exercise-box">
-      <h3><code>src/bin/ex2_import.rs</code></h3>
       <ol class="mt-s">
-        <li>Read <code>data/blocks.hex</code>, one mainnet block per line (heights 1–170)</li>
+        <li>Read the bundled mainnet blocks, one block per line (heights 1–170)</li>
         <li>Decode each line into a <code>Block</code> and call <code>process_block</code></li>
         <li>Count <code>NewBlock</code> / <code>Duplicate</code> / <code>Rejected</code></li>
         <li>Register <code>block_connected</code> and print each height as it joins the chain</li>
         <li>Print the final tip height and hash</li>
       </ol>
-      <div class="run">cargo run --bin ex2_import</div>
     </div>
     <div class="center" style="gap:26px">
       <div class="callout green"><span class="label">Expect</span>170 × <code>NewBlock</code>, 0 rejected, tip at height <b>170</b>.</div>
@@ -857,10 +852,9 @@
 
 <!-- 31 · Exercise 3 -->
 <section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
-  <h2>Explore the chain you built</h2>
+  <h2>Explore the chain</h2>
   <div class="two-col wide-left">
     <div class="exercise-box">
-      <h3><code>src/bin/ex3_walk.rs</code></h3>
       <ol class="mt-s">
         <li>Reopen the chainstate from exercise 2 (no wipe!)</li>
         <li>Iterate the active chain: print height, hash and tx count</li>
@@ -868,7 +862,6 @@
         <li>Find the <b>first block with a non-coinbase transaction</b></li>
         <li>For it, print each input's spent value from undo data</li>
       </ol>
-      <div class="run">cargo run --bin ex3_walk</div>
     </div>
     <div class="center" style="gap:26px">
       <div class="callout green"><span class="label">Expect</span>Block <b>170</b>: one input spending <b>50 BTC</b> created at height <b>9</b>.</div>
@@ -931,14 +924,12 @@
   <h2>Verify Satoshi's signature yourself</h2>
   <div class="two-col wide-left">
     <div class="exercise-box">
-      <h3><code>src/bin/ex4_verify.rs</code></h3>
       <ol class="mt-s">
         <li>Read block 170 and its undo data from your chainstate</li>
         <li>Take transaction #1 (Satoshi → Hal) and its spent coin</li>
         <li>Build <code>PrecomputedTransactionData</code> and call <code>verify</code> on input 0</li>
         <li>Tamper: change an output value in the raw tx and verify again</li>
       </ol>
-      <div class="run">cargo run --bin ex4_verify</div>
     </div>
     <div class="center" style="gap:26px">
       <div class="callout green"><span class="label">Expect</span>Original: <code>Ok(())</code>. Tampered: <code>Err(ScriptVerify(Invalid))</code>.</div>
@@ -1215,7 +1206,7 @@
     </div>
   </div>
   <aside class="notes">
-    <p>Thank everyone. Point to the repo for slides and solutions.</p>
+    <p>Thank everyone. Point to the repo for the slides.</p>
   </aside>
 </section>
 
