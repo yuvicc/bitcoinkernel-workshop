@@ -1,0 +1,1470 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bitcoinkernel Workshop</title>
+  <meta name="description" content="Bitcoinkernel workshop: Bitcoin Core's validation engine as a library, hands-on with rust-bitcoinkernel, and the projects built on it. Bitdevs Summit Jaipur.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23f7931a'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3EK%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/deck.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+  <script src="assets/js/deck.js" defer></script>
+</head>
+<body data-event="Bitdevs Summit Jaipur">
+<div class="deck">
+<div class="stage">
+
+<!-- =====================================================================
+     OPENING
+     ===================================================================== -->
+
+<!-- 1 · Title -->
+<section class="slide title-slide" data-section="Workshop" data-no-chrome>
+  <div class="kicker">Bitdevs Summit Jaipur · Workshop</div>
+  <h1>Bitcoinkernel</h1>
+  <p class="lead">Bitcoin Core's validation engine as a library.<br><span class="muted">Hands-on with <code>rust-bitcoinkernel</code>.</span></p>
+  <div class="title-meta">
+    <div><b>yuvicc</b>Bitcoin Core contributor</div>
+    <div><b>github.com/yuvicc</b>/bitcoinkernel-workshop</div>
+  </div>
+
+  <svg class="diagram title-art" viewBox="0 0 620 620" aria-hidden="true">
+    <defs>
+      <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#f7931a" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#f7931a" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle cx="310" cy="310" r="280" fill="none" stroke="#2a2a31" stroke-width="2" stroke-dasharray="4 10"/>
+    <circle cx="310" cy="310" r="200" fill="none" stroke="#2a2a31" stroke-width="2"/>
+    <circle cx="310" cy="310" r="190" fill="url(#coreGlow)"/>
+    <!-- spokes -->
+    <g stroke="#3a3a43" stroke-width="2">
+      <line x1="310" y1="190" x2="310" y2="30"/>
+      <line x1="395" y1="225" x2="508" y2="112"/>
+      <line x1="430" y1="310" x2="590" y2="310"/>
+      <line x1="395" y1="395" x2="508" y2="508"/>
+      <line x1="310" y1="430" x2="310" y2="590"/>
+      <line x1="225" y1="395" x2="112" y2="508"/>
+      <line x1="190" y1="310" x2="30" y2="310"/>
+      <line x1="225" y1="225" x2="112" y2="112"/>
+    </g>
+    <!-- core hexagon -->
+    <polygon points="310,180 422,245 422,375 310,440 198,375 198,245" fill="#16161a" stroke="#f7931a" stroke-width="3"/>
+    <polygon points="310,215 392,262 392,358 310,405 228,358 228,262" fill="rgba(247,147,26,0.10)" stroke="rgba(247,147,26,0.5)" stroke-width="1.5"/>
+    <text x="310" y="300" text-anchor="middle" class="t-mono" style="font-size:22px;fill:#8d8d98">libbitcoin</text>
+    <text x="310" y="338" text-anchor="middle" style="font-size:36px;font-weight:700;fill:#f7931a">kernel</text>
+    <!-- language satellites -->
+    <g class="t-mono" style="font-size:19px">
+      <circle cx="310" cy="30" r="8" fill="#f7931a"/><text x="310" y="10" text-anchor="middle" style="fill:#ededf0">Rust</text>
+      <circle cx="508" cy="112" r="8" fill="#6cb6ff"/><text x="530" y="100" style="fill:#c4c4cc">C++</text>
+      <circle cx="590" cy="310" r="8" fill="#3fb950"/><text x="575" y="345" text-anchor="middle" style="fill:#c4c4cc">Python</text>
+      <circle cx="508" cy="508" r="8" fill="#b392f0"/><text x="530" y="540" style="fill:#c4c4cc">Go</text>
+      <circle cx="310" cy="590" r="8" fill="#ffb454"/><text x="310" y="625" text-anchor="middle" style="fill:#c4c4cc">Java</text>
+      <circle cx="112" cy="508" r="8" fill="#6cb6ff"/><text x="60" y="540" style="fill:#c4c4cc">.NET</text>
+      <circle cx="30" cy="310" r="8" fill="#3fb950"/><text x="45" y="345" text-anchor="middle" style="fill:#c4c4cc">Swift</text>
+      <circle cx="112" cy="112" r="8" fill="#b392f0"/><text x="40" y="100" style="fill:#c4c4cc">Zig</text>
+    </g>
+  </svg>
+
+  <aside class="notes">
+    <p>Welcome everyone. Today: what Bitcoinkernel is, why it exists, and then we get our hands dirty with the Rust bindings.</p>
+    <p>Ask the room: who has already run <code>cargo build</code> in the workshop repo? The first build compiles Bitcoin Core and takes a few minutes, so anyone who hasn't should start it <b>now</b> (<code>cd workshop && cargo build --bins</code>).</p>
+  </aside>
+</section>
+
+<!-- 2 · About me -->
+<section class="slide" data-section="Workshop">
+  <div class="kicker">Who am I</div>
+  <h2>yuvicc</h2>
+  <div class="two-col wide-left">
+    <ul class="list">
+      <li>Bitcoin Core open-source contributor</li>
+      <li>Working full-time on the <strong>bitcoinkernel</strong> project</li>
+      <li>Supported by <strong>Bitshala</strong></li>
+      <li>Runs the <strong>Bitcoinkernel Club</strong>: weekly sessions on the C API, bindings and kernel PR reviews</li>
+    </ul>
+    <div class="card">
+      <h3>Things I've built on the kernel</h3>
+      <ul class="list tight small mt-s">
+        <li><code>bitcoinkernel-node</code> (C++)</li>
+        <li><code>bitcoinkernel-jdk</code> (Java FFM)</li>
+        <li><code>bitcoinkernel-docs</code></li>
+        <li><code>zig-bitcoinkernel</code> (WIP)</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Quick intro. Keep this under a minute.</p>
+    <p><b>Edit this slide</b> with your name and anything you want to add.</p>
+  </aside>
+</section>
+
+<!-- 3 · Agenda -->
+<section class="slide" data-section="Workshop">
+  <div class="kicker">Today</div>
+  <h2>Agenda</h2>
+  <div class="agenda">
+    <div class="card">
+      <span class="num">01</span>
+      <h3>Bitcoinkernel</h3>
+      <p>Why consensus needs to be a library. What the kernel is, what it isn't, and what it takes to use it.</p>
+      <div class="time">~25 min · talk</div>
+    </div>
+    <div class="card accent">
+      <span class="num">02</span>
+      <h3>rust-bitcoinkernel</h3>
+      <p>The API, the mental model and the sharp edges. Four exercises: from an empty context to verifying Satoshi's signature.</p>
+      <div class="time">~45 min · hands-on</div>
+    </div>
+    <div class="card">
+      <span class="num">03</span>
+      <h3>Built on the kernel</h3>
+      <p>kernel-node, bitcoinkernel-node, Floresta &amp; Utreexo, and what's coming next.</p>
+      <div class="time">~15 min · showcase + Q&amp;A</div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Three parts. The middle one is the longest and is hands-on, so laptops out.</p>
+    <p>If anyone is stuck on the build, pair them with a neighbour. The exercises only need the crate to compile once.</p>
+  </aside>
+</section>
+
+<!-- =====================================================================
+     PART 1 · BITCOINKERNEL
+     ===================================================================== -->
+
+<!-- 4 · Section -->
+<section class="slide section-slide" data-section="01 · Bitcoinkernel" data-no-chrome>
+  <div class="section-num">01</div>
+  <div class="kicker">Part one</div>
+  <h1>Bitcoinkernel</h1>
+  <p class="lead">What it is, why it exists, and what it needs from you.</p>
+  <aside class="notes"><p>Part one: the why and the what. About 25 minutes.</p></aside>
+</section>
+
+<!-- 5 · The monolith -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">The problem</div>
+  <h2>Bitcoin Core is a monolith</h2>
+  <div class="two-col wide-right middle">
+    <div>
+      <p class="lead" style="font-size:36px">Validation logic lives inside the same process, and often the same code paths, as networking, mempool, wallet, RPC and GUI.</p>
+      <div class="callout mt">To validate blocks <b>exactly</b> like Bitcoin Core, you had to run <b>all</b> of Bitcoin Core.</div>
+    </div>
+    <svg class="diagram" viewBox="0 0 900 620" aria-label="bitcoind monolith diagram">
+      <rect x="10" y="10" width="880" height="600" rx="22" class="box-dashed"/>
+      <text x="40" y="58" class="t-mono t-dim">bitcoind</text>
+
+      <!-- tangles -->
+      <g class="tangle">
+        <path d="M200 160 C 330 240, 330 260, 450 300"/>
+        <path d="M700 160 C 580 230, 560 260, 450 300"/>
+        <path d="M200 470 C 320 400, 330 360, 450 330"/>
+        <path d="M700 470 C 590 400, 560 360, 450 330"/>
+        <path d="M200 160 C 300 330, 300 330, 200 470"/>
+        <path d="M700 160 C 600 330, 600 330, 700 470"/>
+        <path d="M200 160 C 400 110, 500 110, 700 160"/>
+        <path d="M200 470 C 400 530, 500 530, 700 470"/>
+        <path d="M450 110 L 450 250"/>
+        <path d="M450 380 L 450 520"/>
+      </g>
+
+      <g>
+        <rect x="80" y="110" width="240" height="100" rx="14" class="box"/>
+        <text x="200" y="170" text-anchor="middle" class="t-md">P2P networking</text>
+        <rect x="580" y="110" width="240" height="100" rx="14" class="box"/>
+        <text x="700" y="170" text-anchor="middle" class="t-md">Mempool &amp; policy</text>
+        <rect x="80" y="420" width="240" height="100" rx="14" class="box"/>
+        <text x="200" y="480" text-anchor="middle" class="t-md">Wallet</text>
+        <rect x="580" y="420" width="240" height="100" rx="14" class="box"/>
+        <text x="700" y="480" text-anchor="middle" class="t-md">RPC · REST · ZMQ</text>
+        <rect x="370" y="70" width="160" height="70" rx="12" class="box-soft"/>
+        <text x="450" y="114" text-anchor="middle" class="t-sm">GUI</text>
+        <rect x="370" y="490" width="160" height="70" rx="12" class="box-soft"/>
+        <text x="450" y="534" text-anchor="middle" class="t-sm">Indexes</text>
+
+        <rect x="310" y="245" width="280" height="140" rx="18" class="box-accent"/>
+        <text x="450" y="305" text-anchor="middle" class="t-lg t-accent">Validation</text>
+        <text x="450" y="342" text-anchor="middle" class="t-sm">consensus · chainstate</text>
+      </g>
+    </svg>
+  </div>
+  <aside class="notes">
+    <p>Historically Core grew as one program. Validation code reached into global state, command-line args, the GUI's interfaces and more.</p>
+    <p>If you wanted Core's exact rules in your own software, the options were: run bitcoind and talk RPC, or reimplement the rules yourself. Both have costs.</p>
+  </aside>
+</section>
+
+<!-- 6 · Why it matters -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Why it matters</div>
+  <h2>Consensus is defined by code, bugs included</h2>
+  <div class="two-col">
+    <div>
+      <p class="quote" style="font-size:40px">Every node must agree on validity for every block, forever. A disagreement is a <em>chain split</em>.</p>
+      <p class="mt muted" style="font-size:30px">Consensus isn't the spec in someone's head. It's what the deployed code actually does, edge cases and all.</p>
+    </div>
+    <div class="grid-2" style="grid-template-columns:1fr;gap:24px">
+      <div class="card step">
+        <span class="tag">2013</span>
+        <h3>Core vs Core</h3>
+        <p>v0.8 switched to LevelDB and accepted a block that v0.7's BerkeleyDB lock limits couldn't. The result was an accidental chain split. <b>Even the database was consensus.</b></p>
+      </div>
+      <div class="card step">
+        <span class="tag">2022</span>
+        <h3>Reimplementations drift</h3>
+        <p>btcd, and LND on top of it, twice rejected valid blocks with large Taproot witnesses and stalled on a stale tip.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Two stories. In March 2013, Bitcoin Core 0.8 vs 0.7: same project, different database, and the network split for several hours. Rule-for-rule equivalence isn't enough; you need bug-for-bug equivalence.</p>
+    <p>In October and November 2022, btcd had wire-level witness size limits that Core didn't have. Blocks containing big Taproot witnesses were rejected, and LND nodes using btcd as backend stopped following the chain.</p>
+    <p>Takeaway: if you want Core's consensus, <b>use Core's code</b>.</p>
+  </aside>
+</section>
+
+<!-- 7 · libbitcoinconsensus -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Previous attempt</div>
+  <h2><code style="font-size:0.9em">libbitcoinconsensus</code></h2>
+  <div class="two-col">
+    <div>
+      <p class="lead" style="font-size:36px">A shared library exposing <b>one</b> function: verify a single script.</p>
+      <div class="code sm mt">
+        <script type="text/plain" data-lang="c">
+          int bitcoinconsensus_verify_script(
+              const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
+              const unsigned char *txTo,         unsigned int txToLen,
+              unsigned int nIn, unsigned int flags,
+              bitcoinconsensus_error* err);
+        </script>
+      </div>
+    </div>
+    <div>
+      <ul class="crosses">
+        <li>No block validation</li>
+        <li>No chainstate or UTXO set</li>
+        <li>Script is a small slice of consensus</li>
+        <li>Little adoption. Deprecated in v27, <b>removed in v28</b> (#29189)</li>
+      </ul>
+      <div class="callout blue mt"><span class="label">Lesson</span>A useful consensus library has to own <b>state</b>: blocks, UTXOs, the chain.</div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>libbitcoinconsensus existed for years. It was stateless and tiny, so it couldn't tell you whether a <i>block</i> is valid; that needs the UTXO set, the chain, and contextual checks.</p>
+    <p>It saw little adoption and was removed in v28. The kernel is the "do it properly" successor.</p>
+  </aside>
+</section>
+
+<!-- 8 · What is libbitcoinkernel -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Enter</div>
+  <h2>libbitcoinkernel</h2>
+  <p class="quote" style="font-size:44px">"A stateful library that can spawn threads, do caching, do I/O"<cite>Bitcoin Kernel Library Project Tracking, bitcoin/bitcoin#27587</cite></p>
+  <div class="grid-3 mt-l">
+    <div class="card step">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/></svg></div>
+      <h3>The same code</h3>
+      <p>It's the validation engine that Bitcoin Core itself runs, not a reimplementation.</p>
+    </div>
+    <div class="card step">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg></div>
+      <h3>A C API</h3>
+      <p>A single header, <code>bitcoinkernel.h</code>, with opaque <code>btck_*</code> handles and functions.</p>
+    </div>
+    <div class="card step">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="9"/></svg></div>
+      <h3>Incremental</h3>
+      <p>Core is refactored step by step until its own node code becomes a consumer of the kernel.</p>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Key word: <b>stateful</b>. This is not a pure function library. It manages a data directory, LevelDB databases, block files, a thread pool for script checks, and caches.</p>
+    <p>And it's the same code Core runs, extracted rather than rewritten.</p>
+  </aside>
+</section>
+
+<!-- 9 · In vs out -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Scope</div>
+  <h2>What's in and what's out</h2>
+  <div class="two-col">
+    <div class="card" style="padding:44px">
+      <h3 class="green" style="margin-bottom:28px">In the kernel</h3>
+      <ul class="checks">
+        <li>Block &amp; header validation</li>
+        <li>Script verification (P2SH, SegWit, Taproot)</li>
+        <li>Chainstate: the UTXO set in LevelDB</li>
+        <li>Block storage: <code>blk*.dat</code>, <code>rev*.dat</code>, block index</li>
+        <li>Reading blocks and undo data</li>
+        <li>Validation notifications &amp; callbacks</li>
+      </ul>
+    </div>
+    <div class="card" style="padding:44px">
+      <h3 class="red" style="margin-bottom:28px">Left to you</h3>
+      <ul class="crosses">
+        <li>P2P networking &amp; peer management</li>
+        <li>JSON-RPC, REST, ZMQ servers</li>
+        <li>Wallet</li>
+        <li>Mempool &amp; relay policy (for now)</li>
+        <li>Additional indexes (txindex, filters…)</li>
+        <li>User interface</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>The kernel decides <i>what is valid</i> and remembers <i>what the chain is</i>. Everything about <i>how you get data</i> and <i>how you present it</i> is yours.</p>
+    <p>That's the opportunity: bring your own P2P stack (or none at all, as in our exercises), your own indexes, your own UI.</p>
+  </aside>
+</section>
+
+<!-- 10 · Architecture -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Architecture</div>
+  <h2>Where it sits</h2>
+  <svg class="diagram" viewBox="0 0 1664 700" aria-label="architecture diagram">
+    <!-- app layer -->
+    <rect x="0" y="0" width="1664" height="150" rx="18" class="box-blue"/>
+    <text x="40" y="52" class="t-lg">Your application</text>
+    <text x="40" y="92" class="t-sm">any language</text>
+    <g class="t-md">
+      <rect x="560" y="40" width="200" height="72" rx="12" class="box"/><text x="660" y="84" text-anchor="middle">P2P / fetch</text>
+      <rect x="780" y="40" width="200" height="72" rx="12" class="box"/><text x="880" y="84" text-anchor="middle">Indexing</text>
+      <rect x="1000" y="40" width="200" height="72" rx="12" class="box"/><text x="1100" y="84" text-anchor="middle">RPC / API</text>
+      <rect x="1220" y="40" width="200" height="72" rx="12" class="box"/><text x="1320" y="84" text-anchor="middle">UI</text>
+      <rect x="1440" y="40" width="190" height="72" rx="12" class="box"/><text x="1535" y="84" text-anchor="middle">Policy</text>
+    </g>
+
+    <!-- arrows down / up -->
+    <path d="M540 150 L540 222" class="line-accent" marker-end="url(#arrA)"/>
+    <text x="560" y="198" class="t-mono t-accent">raw blocks · headers · txs</text>
+    <path d="M1120 222 L1120 150" class="line" marker-end="url(#arrG)"/>
+    <text x="1140" y="198" class="t-mono t-dim">notifications · callbacks</text>
+
+    <!-- C API band -->
+    <rect x="0" y="230" width="1664" height="80" rx="14" fill="#1d1d22" stroke="#f7931a" stroke-width="2.5"/>
+    <text x="832" y="282" text-anchor="middle" class="t-mono" style="font-size:28px;fill:#f7931a">bitcoinkernel.h: the C API (btck_*)</text>
+
+    <!-- kernel -->
+    <rect x="0" y="340" width="1664" height="200" rx="18" class="box-accent"/>
+    <text x="40" y="392" class="t-lg t-accent">libbitcoinkernel</text>
+    <text x="40" y="430" class="t-sm">C++20 · static or shared</text>
+    <g class="t-md">
+      <rect x="400" y="372" width="290" height="136" rx="14" class="box"/>
+      <text x="545" y="430" text-anchor="middle">Block validation</text>
+      <text x="545" y="466" text-anchor="middle" class="t-sm">CheckBlock · ConnectBlock</text>
+      <rect x="710" y="372" width="290" height="136" rx="14" class="box"/>
+      <text x="855" y="430" text-anchor="middle">Script interpreter</text>
+      <text x="855" y="466" text-anchor="middle" class="t-sm">+ sig cache · thread pool</text>
+      <rect x="1020" y="372" width="290" height="136" rx="14" class="box"/>
+      <text x="1165" y="430" text-anchor="middle">ChainstateManager</text>
+      <text x="1165" y="466" text-anchor="middle" class="t-sm">active chain · UTXO cache</text>
+      <rect x="1330" y="372" width="300" height="136" rx="14" class="box"/>
+      <text x="1480" y="430" text-anchor="middle">BlockManager</text>
+      <text x="1480" y="466" text-anchor="middle" class="t-sm">block &amp; undo files</text>
+    </g>
+
+    <path d="M832 540 L832 590" class="line" marker-end="url(#arrG)"/>
+
+    <!-- disk -->
+    <rect x="0" y="598" width="1664" height="100" rx="18" class="box-soft"/>
+    <text x="40" y="658" class="t-md" style="fill:#8d8d98">datadir/</text>
+    <g class="t-mono">
+      <text x="300" y="658">blocks/blk*.dat</text>
+      <text x="620" y="658">blocks/rev*.dat</text>
+      <text x="940" y="658">blocks/index/ <tspan class="t-dim">(LevelDB)</tspan></text>
+      <text x="1330" y="658">chainstate/ <tspan class="t-dim">(LevelDB)</tspan></text>
+    </g>
+
+    <defs>
+      <marker id="arrA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f7931a"/></marker>
+      <marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5f5f6a"/></marker>
+    </defs>
+  </svg>
+  <aside class="notes">
+    <p>Your app feeds bytes in: blocks, headers, transactions. The kernel validates them, persists them in a Core-compatible data directory, and calls you back with events.</p>
+    <p>The on-disk layout is the same as bitcoind's, which is why tools can read an existing Core datadir (with bitcoind stopped!).</p>
+  </aside>
+</section>
+
+<!-- 11 · Timeline -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">History</div>
+  <h2>How we got here</h2>
+  <div class="timeline">
+    <div class="tl-item step">
+      <div class="tl-date">2022</div>
+      <div class="tl-title">The project starts</div>
+      <div class="tl-body">Carl Dong opens <b>#24303</b>, "The libbitcoinkernel Project": extract a <code>bitcoin-chainstate</code> binary and prune dependencies.</div>
+    </div>
+    <div class="tl-item step">
+      <div class="tl-date">2023</div>
+      <div class="tl-title">Tracking &amp; decoupling</div>
+      <div class="tl-body">TheCharlatan (now <b>sedited</b>) takes the lead. Tracking issue <b>#27587</b>. Globals, args and logging get untangled.</div>
+    </div>
+    <div class="tl-item step">
+      <div class="tl-date">2024–25</div>
+      <div class="tl-title">Clearing the path</div>
+      <div class="tl-body"><code>libbitcoinconsensus</code> removed (#29189). An internal kernel library target (#28690).</div>
+    </div>
+    <div class="tl-item step">
+      <div class="tl-date">Nov 2025</div>
+      <div class="tl-title">The C API lands</div>
+      <div class="tl-body"><b>#30595</b> "Introduce C header API" is merged. Bindings in many languages follow.</div>
+    </div>
+    <div class="tl-item now step">
+      <div class="tl-date">2026 · now</div>
+      <div class="tl-title">Growing the API</div>
+      <div class="tl-body">Block validation without a full UTXO set (<b>#35187</b>), better errors, logging and more.</div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Carl Dong kicked this off in early 2022 with the bitcoin-chainstate experiment: a minimal binary that only links what validation needs.</p>
+    <p>sedited (formerly TheCharlatan) has driven it since, through the tracking issue #27587 and a long series of decoupling PRs.</p>
+    <p>The big milestone: the C header API (#30595), merged November 2025 during the v31 development cycle. That's what made all the language bindings possible.</p>
+    <p>Still open today: #35187, validating a block when the caller provides the spent coins. More on why that matters for Utreexo in part three.</p>
+  </aside>
+</section>
+
+<!-- 12 · Why C -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Design</div>
+  <h2>Why a C API over a C++ core?</h2>
+  <div class="grid-3">
+    <div class="card step">
+      <span class="num">01</span>
+      <h3>Universal FFI</h3>
+      <p>Every language can call C: Rust <code>extern "C"</code>, Python ctypes/cffi, Go cgo, Java FFM, C# P/Invoke, Swift, Zig…</p>
+    </div>
+    <div class="card step">
+      <span class="num">02</span>
+      <h3>ABI stability</h3>
+      <p>C++ name mangling, templates, exceptions and STL layouts don't cross compiler or language boundaries. C does.</p>
+    </div>
+    <div class="card step">
+      <span class="num">03</span>
+      <h3>Freedom to refactor</h3>
+      <p>A narrow, opaque surface lets Core rework its internals without breaking downstream users.</p>
+    </div>
+  </div>
+  <div class="callout mt-l step">For C++ users there is also a header-only RAII wrapper, <code>bitcoinkernel_wrapper.h</code> (<code>btck::</code> namespace), on top of the C API.</div>
+  <aside class="notes">
+    <p>The implementation is C++, but the <i>interface</i> is C. That's deliberate: C is the lingua franca for FFI.</p>
+    <p>The C++ wrapper gives you RAII handles, ranges and virtual classes for notifications. My C++ node uses it; you'll see it later.</p>
+  </aside>
+</section>
+
+<!-- 13 · C API design rules -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Design</div>
+  <h2>The C API in one slide</h2>
+  <div class="two-col wide-right">
+    <ul class="list small">
+      <li><b>Opaque handles</b>: <code>btck_Context*</code>, <code>btck_Block*</code>, … You never see the struct.</li>
+      <li>Every <code>*_create</code> pairs with a <code>*_destroy</code>.</li>
+      <li><code>const</code> return values are <b>views</b>, borrowed from their parent. Don't destroy them.</li>
+      <li>Blocks and transactions are refcounted: <code>*_copy</code> is cheap.</li>
+      <li>Callbacks take a <code>void* user_data</code>. This is where bindings hook in closures.</li>
+    </ul>
+    <div class="code sm" data-title="validate.c">
+      <script type="text/plain" data-lang="c" data-hl="10-11">
+        btck_ChainParameters* params =
+            btck_chain_parameters_create(btck_ChainType_MAINNET);
+        btck_ContextOptions* opts = btck_context_options_create();
+        btck_context_options_set_chainparams(opts, params);
+        btck_Context* ctx = btck_context_create(opts);
+
+        /* ... chainstate manager options, create chainman ... */
+
+        btck_Block* block = btck_block_create(raw, raw_len);
+        int new_block = 0;
+        btck_chainstate_manager_process_block(chainman, block, &new_block);
+
+        btck_block_destroy(block);
+        btck_chainstate_manager_destroy(chainman);
+        btck_context_destroy(ctx);
+        btck_context_options_destroy(opts);
+        btck_chain_parameters_destroy(params);
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>You won't write C today; the Rust crate does all of this for you. But knowing the shape helps you understand the Rust API: every Rust type wraps one of these handles, and <code>Drop</code> calls the matching destroy.</p>
+    <p>"Views" become Rust's <code>XRef&lt;'a&gt;</code> types with lifetimes, so the borrow checker enforces what the C docs only ask for politely.</p>
+  </aside>
+</section>
+
+<!-- 14 · Three ways to use it -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Capabilities</div>
+  <h2>Three ways to use the kernel</h2>
+  <div class="grid-3">
+    <div class="card">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+      <h3>Context-free validation</h3>
+      <p>Verify a script or check a block's structure, PoW and merkle root. No disk, no chainstate.</p>
+      <p class="mono dim" style="font-size:20px;margin-top:18px">verify() · Block::check()*</p>
+    </div>
+    <div class="card accent">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4M17.5 10v4"/></svg></div>
+      <h3>Full validation</h3>
+      <p>Feed blocks and headers to a <code>ChainstateManager</code>. The kernel validates, stores and connects them to the best chain.</p>
+      <p class="mono dim" style="font-size:20px;margin-top:18px">process_block() · process_block_header()</p>
+    </div>
+    <div class="card">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
+      <h3>Data access</h3>
+      <p>Walk the block index and read blocks plus undo data (spent outputs) from any Core datadir.</p>
+      <p class="mono dim" style="font-size:20px;margin-top:18px">read_block_data() · read_spent_outputs()</p>
+    </div>
+  </div>
+  <p class="dim mt" style="font-size:22px">* <code>Block::check</code> is on rust-bitcoinkernel master, not yet in the 0.2.1 release.</p>
+  <aside class="notes">
+    <p>These three modes cover almost every use case. The exercises today touch all three: exercise 2 is full validation, exercise 3 is data access, and exercise 4 is context-free script verification.</p>
+  </aside>
+</section>
+
+<!-- 15 · Use cases -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Use cases</div>
+  <h2>What people build with it</h2>
+  <div class="grid-3" style="gap:26px">
+    <div class="card"><h3>Alternative full nodes</h3><p>New P2P stacks, new languages, new architectures, with Core's consensus.</p></div>
+    <div class="card"><h3>Indexers &amp; explorers</h3><p>Read blocks and undo data straight from disk. No RPC round-trips.</p></div>
+    <div class="card"><h3>Research &amp; data science</h3><p>Parse the whole chain from Python or Rust at native speed.</p></div>
+    <div class="card"><h3>Layer 2 &amp; wallets</h3><p>Validate scripts and transactions exactly as the network will.</p></div>
+    <div class="card"><h3>Lightweight &amp; mobile</h3><p>Utreexo nodes and iOS full nodes that embed the engine.</p></div>
+    <div class="card"><h3>Testing &amp; fuzzing</h3><p>Differential tests of other implementations against the reference.</p></div>
+  </div>
+  <aside class="notes">
+    <p>All of these exist today in some form. We'll see concrete projects in part three.</p>
+  </aside>
+</section>
+
+<!-- 16 · Requirements & caveats -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Requirements</div>
+  <h2>What it needs from you</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="muted" style="font-size:24px;letter-spacing:.12em;text-transform:uppercase">To build</h3>
+      <table class="kv">
+        <tr><td>Build system</td><td>CMake ≥ 3.22</td></tr>
+        <tr><td>Compiler</td><td>C++20: GCC ≥ 12.1 or Clang ≥ 17</td></tr>
+        <tr><td>Libraries</td><td>Boost headers (≥ 1.74)</td></tr>
+        <tr><td>Time</td><td>First build compiles Core: <b>minutes</b></td></tr>
+      </table>
+      <h3 class="muted mt" style="font-size:24px;letter-spacing:.12em;text-transform:uppercase">To run</h3>
+      <table class="kv">
+        <tr><td>Data dir</td><td><b>Exclusive</b>. Never share with a running bitcoind</td></tr>
+        <tr><td>Memory</td><td>~450 MiB default DB cache, plus UTXO set if in-memory</td></tr>
+        <tr><td>Disk</td><td>Same as Core for full blocks</td></tr>
+      </table>
+    </div>
+    <div class="center">
+      <div class="callout red">
+        <span class="label">Experimental</span>
+        "The header is unversioned and not stable yet. Users should expect breaking changes."
+        <div class="dim mono" style="font-size:20px;margin-top:12px">from bitcoinkernel.h</div>
+      </div>
+      <ul class="list small mt">
+        <li>Pin exact versions of the kernel and the bindings</li>
+        <li>Read the changelog when upgrading</li>
+        <li>Report friction. The API is still being shaped (#31878)</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>The build requirements are Bitcoin Core's own. Bindings like rust-bitcoinkernel vendor Core and build it with CMake behind the scenes, so you need the toolchain even though you "only" add a crate.</p>
+    <p>The datadir is exclusive: two processes opening the same LevelDB will fail or worse. Copy the datadir, or stop bitcoind.</p>
+    <p>Most important: the API is <b>not stable</b>. That's also an invitation. Issue #31878 collects feedback from people using the kernel in alternative implementations.</p>
+  </aside>
+</section>
+
+<!-- 17 · Bindings -->
+<section class="slide" data-section="01 · Bitcoinkernel">
+  <div class="kicker">Ecosystem</div>
+  <h2>Bindings in many languages</h2>
+  <div class="grid-4">
+    <div class="card binding accent"><span class="lang">Rust</span><span class="who">sedited/rust-bitcoinkernel</span></div>
+    <div class="card binding"><span class="lang">Python</span><span class="who">stickies-v/py-bitcoinkernel</span></div>
+    <div class="card binding"><span class="lang">Go</span><span class="who">stringintech/go-bitcoinkernel</span></div>
+    <div class="card binding"><span class="lang">Java</span><span class="who">yuvicc/bitcoinkernel-jdk</span></div>
+    <div class="card binding"><span class="lang">C# / .NET</span><span class="who">janb84/BitcoinKernel.NET</span></div>
+    <div class="card binding"><span class="lang">C++</span><span class="who">bitcoinkernel_wrapper.h</span></div>
+    <div class="card binding more"><span class="lang">Elixir · JS · Swift</span><span class="who">listed in #27587</span></div>
+    <div class="card binding more"><span class="lang">Zig</span><span class="who">yuvicc/zig-bitcoinkernel (WIP)</span></div>
+  </div>
+  <div class="callout green mt-l">
+    <span class="label">Keeping them honest</span>
+    <code>kernel-bindings-tests</code> (stringintech) is a language-agnostic conformance suite. Each binding ships a small handler binary, and a shared runner feeds it the same JSON test vectors.
+  </div>
+  <aside class="notes">
+    <p>The C API made this explosion possible. Rust is the most mature and is what we'll use today.</p>
+    <p>The conformance suite is a nice idea: one set of test vectors, every binding must agree.</p>
+  </aside>
+</section>
+
+<!-- =====================================================================
+     PART 2 · RUST-BITCOINKERNEL
+     ===================================================================== -->
+
+<!-- 18 · Section -->
+<section class="slide section-slide" data-section="02 · rust-bitcoinkernel" data-no-chrome>
+  <div class="section-num">02</div>
+  <div class="kicker">Part two · hands-on</div>
+  <h1>rust-bitcoinkernel</h1>
+  <p class="lead">The API, the mental model, and the sharp edges, with four exercises.</p>
+  <aside class="notes"><p>Laptops open. About 45 minutes. Check that everyone's build has finished.</p></aside>
+</section>
+
+<!-- 19 · Crate layout -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Anatomy</div>
+  <h2>Two crates, one vendored Core</h2>
+  <div class="two-col wide-right middle">
+    <table class="kv">
+      <tr><td>Safe wrapper</td><td><code>bitcoinkernel</code> 0.2.1</td></tr>
+      <tr><td>Raw FFI</td><td><code>libbitcoinkernel-sys</code> 0.3.0</td></tr>
+      <tr><td>Repo</td><td class="mono" style="font-size:22px">github.com/sedited/rust-bitcoinkernel</td></tr>
+      <tr><td>MSRV</td><td>1.71</td></tr>
+      <tr><td>License</td><td>MIT</td></tr>
+    </table>
+    <svg class="diagram" viewBox="0 0 900 600" aria-label="crate stack">
+      <rect x="0" y="0" width="900" height="100" rx="16" class="box-blue"/>
+      <text x="36" y="60" class="t-lg">your code</text>
+      <text x="864" y="60" text-anchor="end" class="t-mono t-dim">use bitcoinkernel::*</text>
+
+      <rect x="0" y="130" width="900" height="130" rx="16" class="box-accent"/>
+      <text x="36" y="185" class="t-lg t-accent">bitcoinkernel</text>
+      <text x="36" y="225" class="t-sm">ownership · lifetimes · Result · closures as callbacks</text>
+
+      <rect x="0" y="290" width="900" height="130" rx="16" class="box"/>
+      <text x="36" y="345" class="t-lg">libbitcoinkernel-sys</text>
+      <text x="36" y="385" class="t-sm">hand-written extern "C" · build.rs runs CMake</text>
+
+      <rect x="0" y="450" width="900" height="130" rx="16" class="box-soft"/>
+      <text x="36" y="505" class="t-lg">bitcoin/ <tspan class="t-sm">(git subtree of Bitcoin Core)</tspan></text>
+      <text x="36" y="545" class="t-mono t-dim">-DBUILD_KERNEL_LIB=ON -DBUILD_SHARED_LIBS=OFF</text>
+    </svg>
+  </div>
+  <aside class="notes">
+    <p>The -sys crate contains Bitcoin Core as a git subtree. Its build.rs runs CMake with only the kernel library enabled (no daemon, no wallet, no tests) and links it statically.</p>
+    <p>That's why your first <code>cargo build</code> takes minutes, and why you need cmake, a C++20 compiler and Boost headers.</p>
+    <p>Everything you touch is in the safe <code>bitcoinkernel</code> crate.</p>
+  </aside>
+</section>
+
+<!-- 20 · Setup -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Setup</div>
+  <h2>Get the workshop repo building</h2>
+  <div class="two-col wide-left">
+    <div>
+      <div class="code sm" data-title="terminal">
+        <script type="text/plain" data-lang="bash">
+          # Ubuntu / Debian
+          sudo apt install build-essential cmake libboost-dev
+          # macOS
+          brew install cmake boost
+
+          git clone https://github.com/yuvicc/bitcoinkernel-workshop
+          cd bitcoinkernel-workshop/workshop
+          cargo build --bins        # first build compiles Bitcoin Core
+        </script>
+      </div>
+      <div class="code sm mt-s" data-title="workshop/Cargo.toml">
+        <script type="text/plain" data-lang="ini">
+          [dependencies]
+          bitcoinkernel = "=0.2.1"
+        </script>
+      </div>
+    </div>
+    <div class="center" style="align-items:center;text-align:center;gap:24px">
+      <div class="qr" data-qr="https://github.com/yuvicc/bitcoinkernel-workshop"></div>
+      <div class="link">github.com/yuvicc/<br>bitcoinkernel-workshop</div>
+      <div class="pills" style="justify-content:center"><span class="pill green">works offline</span><span class="pill">blocks 1–170 bundled</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>The repo ships mainnet blocks 1 through 170 as hex in <code>workshop/data/blocks.hex</code>, so nobody needs network access or a synced node.</p>
+    <p>Every exercise is a binary: <code>ex1_context</code> … <code>ex4_verify</code>, with matching <code>*_solution</code> binaries if you get stuck.</p>
+  </aside>
+</section>
+
+<!-- 21 · Mental model -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Mental model</div>
+  <h2>The object graph</h2>
+  <svg class="diagram" viewBox="0 0 1664 420" aria-label="object graph">
+    <defs>
+      <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5f5f6a"/></marker>
+    </defs>
+    <g>
+      <rect x="0" y="40" width="260" height="130" rx="16" class="box-accent"/>
+      <text x="130" y="100" text-anchor="middle" class="t-lg t-accent">Context</text>
+      <text x="130" y="138" text-anchor="middle" class="t-sm">chain · callbacks</text>
+
+      <path d="M260 105 L330 105" class="line" marker-end="url(#arr2)"/>
+
+      <rect x="340" y="40" width="340" height="130" rx="16" class="box-accent"/>
+      <text x="510" y="100" text-anchor="middle" class="t-lg t-accent">ChainstateManager</text>
+      <text x="510" y="138" text-anchor="middle" class="t-sm">datadir · process_block</text>
+
+      <path d="M680 105 L750 105" class="line" marker-end="url(#arr2)"/>
+
+      <rect x="760" y="40" width="200" height="130" rx="16" class="box"/>
+      <text x="860" y="100" text-anchor="middle" class="t-lg">Chain&lt;'a&gt;</text>
+      <text x="860" y="138" text-anchor="middle" class="t-sm">active chain</text>
+
+      <path d="M960 105 L1030 105" class="line" marker-end="url(#arr2)"/>
+
+      <rect x="1040" y="40" width="300" height="130" rx="16" class="box"/>
+      <text x="1190" y="100" text-anchor="middle" class="t-lg">BlockTreeEntry&lt;'a&gt;</text>
+      <text x="1190" y="138" text-anchor="middle" class="t-sm">height · hash · header</text>
+
+      <path d="M1340 105 L1410 105" class="line" marker-end="url(#arr2)"/>
+
+      <rect x="1420" y="40" width="244" height="130" rx="16" class="box"/>
+      <text x="1542" y="100" text-anchor="middle" class="t-lg">Block</text>
+      <text x="1542" y="138" text-anchor="middle" class="t-sm">read_block_data</text>
+
+      <path d="M1542 170 L1542 240" class="line" marker-end="url(#arr2)"/>
+
+      <rect x="1250" y="250" width="414" height="130" rx="16" class="box"/>
+      <text x="1457" y="310" text-anchor="middle" class="t-lg">TransactionRef&lt;'_&gt;</text>
+      <text x="1457" y="348" text-anchor="middle" class="t-sm">inputs · outputs · txid</text>
+
+      <path d="M1250 315 L1180 315" class="line" marker-end="url(#arr2)"/>
+
+      <rect x="860" y="250" width="310" height="130" rx="16" class="box"/>
+      <text x="1015" y="310" text-anchor="middle" class="t-lg">TxOutRef&lt;'_&gt;</text>
+      <text x="1015" y="348" text-anchor="middle" class="t-sm">value · script_pubkey</text>
+
+      <rect x="0" y="250" width="780" height="130" rx="16" class="box-dashed"/>
+      <text x="36" y="306" class="t-md" style="fill:#ededf0">Owned <tspan class="t-mono t-accent">X</tspan>  vs  borrowed <tspan class="t-mono t-accent">XRef&lt;'a&gt;</tspan></text>
+      <text x="36" y="348" class="t-sm">XRef::to_owned() copies · X::as_ref() borrows · traits in prelude::*</text>
+    </g>
+  </svg>
+  <div class="code sm mt" style="max-width:1100px">
+    <script type="text/plain" data-lang="rust">
+      use bitcoinkernel::prelude::*;   // TransactionExt, TxOutExt, BlockHashExt, …
+    </script>
+  </div>
+  <aside class="notes">
+    <p>Everything hangs off a Context. The ChainstateManager owns a data directory. From it you get the active Chain, entries in the block tree, and from those, blocks and their transactions.</p>
+    <p>Things you get <i>out of</i> a parent are usually borrowed views (<code>…Ref&lt;'a&gt;</code>). The lifetime ties them to their parent, so you can't use a transaction after its block is dropped. Call <code>to_owned()</code> if you need to keep it.</p>
+    <p>Most accessor methods live on extension traits, so always import the prelude.</p>
+  </aside>
+</section>
+
+<!-- 22 · Context -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Context</div>
+  <h2>Building a <code style="font-size:.85em">Context</code></h2>
+  <div class="two-col wide-right">
+    <div>
+      <ul class="list small">
+        <li>Selects the chain: <code>Mainnet</code>, <code>Testnet</code>, <code>Testnet4</code>, <code>Signet</code>, <code>Regtest</code></li>
+        <li>Registers <b>notifications</b>, the kernel telling you what happened</li>
+        <li>Closures must be <code>Send + Sync + 'static</code></li>
+        <li><code>Context</code> is <code>Send + Sync</code>. Share it via <code>Arc</code></li>
+        <li><code>context.interrupt()</code> stops long operations</li>
+      </ul>
+    </div>
+    <div class="code" data-title="src/bin/ex1_solution.rs">
+      <script type="text/plain" data-lang="rust" data-hl="4-6,10-13">
+        use bitcoinkernel::{ChainType, ContextBuilder, KernelError};
+
+        let context = ContextBuilder::new()
+            .chain_type(ChainType::Mainnet)
+            .notifications(|n| {
+                n.register_block_tip(|state, hash, progress| {
+                    println!("tip {hash} {state:?} {:.4}%", progress * 100.0);
+                });
+                n.register_progress(|title, pct, _| println!("{title} {pct}%"));
+                n.register_fatal_error(|msg| {
+                    eprintln!("FATAL: {msg}");
+                    std::process::exit(1);
+                });
+            })
+            .build()?;
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>The builder is the entry point. Chain type determines genesis, consensus params and checkpoints.</p>
+    <p>Notifications available: block_tip, header_tip, progress, warning_set, warning_unset, flush_error, fatal_error.</p>
+    <p>On fatal_error the kernel is in an unrecoverable state. Tear everything down.</p>
+  </aside>
+</section>
+
+<!-- 23 · Validation interface -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Callbacks</div>
+  <h2>The validation interface</h2>
+  <div class="two-col wide-right">
+    <div>
+      <table class="kv" style="font-size:25px">
+        <tr><td><code>block_checked</code></td><td>Verdict for a block, valid or not, with a reason</td></tr>
+        <tr><td><code>new_pow_valid_block</code></td><td>A block with valid PoW extends the tip</td></tr>
+        <tr><td><code>block_connected</code></td><td>Block joined the active chain</td></tr>
+        <tr><td><code>block_disconnected</code></td><td>Block left it (reorg)</td></tr>
+      </table>
+      <div class="callout mt">Callbacks run on the <b>kernel's own thread</b>. Keep them short and send work elsewhere with a channel.</div>
+    </div>
+    <div class="code" data-title="validation callbacks">
+      <script type="text/plain" data-lang="rust" data-hl="4-6">
+        use bitcoinkernel::{prelude::*, ValidationMode};
+
+        builder.validation(|v| {
+            v.register_block_checked(|block, state| {
+                if state.mode() != ValidationMode::Valid {
+                    eprintln!("✗ {} {:?}", block.hash(), state.result());
+                }
+            });
+            v.register_block_connected(|block, entry| {
+                println!("+ #{} {}", entry.height(), block.hash());
+            });
+            v.register_block_disconnected(|block, entry| {
+                println!("- #{} {}", entry.height(), block.hash());
+            });
+        })
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Notifications are about <i>progress</i>. The validation interface is about <i>verdicts</i> and <i>chain changes</i>.</p>
+    <p><code>block_checked</code> is where you learn <b>why</b> a block was rejected: <code>state.result()</code> gives a <code>BlockValidationResult</code> such as Consensus, Mutated, MissingPrev, TimeFuture…</p>
+    <p>Gotcha: for new_pow_valid_block the closure takes <code>(entry, block)</code>, entry first. The others take <code>(block, entry)</code>.</p>
+  </aside>
+</section>
+
+<!-- 24 · Logging -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Observability</div>
+  <h2>Logging</h2>
+  <div class="two-col wide-right">
+    <div>
+      <ul class="list small">
+        <li>Implement the <code>Log</code> trait and hand it to <code>Logger::new</code></li>
+        <li><b>Keep the <code>Logger</code> alive</b>. Dropping it disconnects the log callback</li>
+        <li>Categories: <code>Validation</code>, <code>BlockStorage</code>, <code>CoinDb</code>, <code>LevelDb</code>, <code>Kernel</code>, …</li>
+        <li>Levels: <code>Trace</code>, <code>Debug</code>, <code>Info</code></li>
+        <li>Settings are <b>global</b> and affect every <code>Logger</code></li>
+      </ul>
+    </div>
+    <div class="code" data-title="logging">
+      <script type="text/plain" data-lang="rust" data-hl="8">
+        use bitcoinkernel::{Log, LogCategory, LogLevel, Logger};
+
+        struct StdoutLog;
+        impl Log for StdoutLog {
+            fn log(&self, message: &str) { print!("kernel | {message}"); }
+        }
+
+        let logger = Logger::new(StdoutLog)?;   // keep it bound!
+        logger.set_level_category(LogCategory::Validation, LogLevel::Debug);
+        logger.enable_category(LogCategory::BlockStorage);
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>A classic Rust footgun: <code>let _ = Logger::new(..)</code> drops immediately. Use a named binding like <code>_logger</code> or <code>logger</code>.</p>
+    <p>Messages emitted before a logger exists are buffered (up to about 1 MB) and flushed once you connect one.</p>
+  </aside>
+</section>
+
+<!-- 25 · Exercise 1 -->
+<section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Exercise 1</div>
+  <h2>Boot the engine</h2>
+  <div class="two-col wide-left">
+    <div class="exercise-box">
+      <h3>Tasks · <code>src/bin/ex1_context.rs</code></h3>
+      <ol class="mt-s">
+        <li>Create a <code>Logger</code> that prints kernel messages with a prefix</li>
+        <li>Build a <b>mainnet</b> <code>Context</code></li>
+        <li>Register <code>block_tip</code>, <code>progress</code> and <code>fatal_error</code> notifications</li>
+        <li>Open a <code>ChainstateManager</code> in <code>./kernel-data</code> and print the tip height</li>
+      </ol>
+      <div class="run">cargo run --bin ex1_context</div>
+    </div>
+    <div class="center" style="gap:26px">
+      <span class="timer-badge">⏱ 7 min</span>
+      <div class="callout green"><span class="label">Expect</span>Kernel log lines, then <code>tip height: 0</code>. A fresh chainstate already knows genesis.</div>
+      <p class="dim" style="font-size:24px">Stuck? <code>cargo run --bin ex1_solution</code></p>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Walk around. The common mistakes are forgetting to bind the logger, and forgetting <code>use bitcoinkernel::prelude::*</code>.</p>
+    <p>Point out the kernel log lines about opening LevelDB and loading the block index.</p>
+  </aside>
+</section>
+
+<!-- 26 · ChainstateManager -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">State</div>
+  <h2><code style="font-size:.85em">ChainstateManager</code></h2>
+  <div class="two-col wide-right">
+    <div>
+      <table class="kv" style="font-size:25px">
+        <tr><td><code>worker_threads(n)</code></td><td>Parallel script checks, clamped to 0–15</td></tr>
+        <tr><td><code>wipe_db(bt, cs)</code></td><td>Reindex knobs. <code>(true, false)</code> is <b>invalid</b></td></tr>
+        <tr><td><code>*_db_in_memory</code></td><td>Great for tests. Mainnet UTXO set is GBs</td></tr>
+        <tr><td><code>import_blocks()</code></td><td>Runs the reindex / loads existing block files</td></tr>
+      </table>
+      <div class="callout mt">After any <code>wipe_db</code>, call <code>import_blocks()</code> <b>before</b> anything else.</div>
+    </div>
+    <div class="code" data-title="chainstate">
+      <script type="text/plain" data-lang="rust" data-hl="5-6">
+        use bitcoinkernel::ChainstateManager;
+
+        let chainman = ChainstateManager::builder(
+                &context, "./kernel-data", "./kernel-data/blocks")?
+            .worker_threads(4)
+            .wipe_db(false, false)?   // (block_tree, chainstate)
+            .build()?;
+
+        chainman.import_blocks()?;     // no-op unless wiping
+
+        let tip = chainman.active_chain().tip();
+        println!("tip height: {}", tip.height());
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>data_dir holds the chainstate; blocks_dir holds blk/rev files. Both are created if missing. Note the block index DB always lives under data_dir/blocks/index regardless of blocks_dir.</p>
+    <p><code>wipe_db(false, true)</code> rebuilds only the chainstate from the block files you already have. <code>(true, true)</code> is a full reindex.</p>
+    <p>Dropping the ChainstateManager flushes state to disk. More on shutdown order later.</p>
+  </aside>
+</section>
+
+<!-- 27 · process_block -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Full validation</div>
+  <h2>Feeding blocks: <code style="font-size:.85em">process_block</code></h2>
+  <div class="two-col">
+    <div class="code" data-title="process">
+      <script type="text/plain" data-lang="rust" data-hl="4">
+        use bitcoinkernel::{Block, ProcessBlockResult::*};
+
+        let block = Block::new(&raw_bytes)?;
+        match chainman.process_block(&block) {
+            NewBlock  => new += 1,   // stored to disk
+            Duplicate => dup += 1,   // already known
+            Rejected  => bad += 1,   // failed early checks
+        }
+      </script>
+    </div>
+    <div>
+      <div class="callout red"><span class="label">Careful</span><code>NewBlock</code> means <b>"written to disk"</b>. It does not mean valid, and it does not mean on the active chain.</div>
+      <ul class="list small mt">
+        <li>Validity: the <code>block_checked</code> callback</li>
+        <li>Chain membership: <code>block_connected</code>, or <code>active_chain().contains(&amp;entry)</code></li>
+        <li>Blocks may arrive out of order. The kernel connects them once parents are known</li>
+        <li>Headers first? <code>process_block_header(&amp;header)</code></li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>This is the #1 misunderstanding. process_block tells you what happened to <i>storage</i>. The verdict comes through the validation interface.</p>
+    <p>My C++ node has a comment on exactly this: "ProcessBlock succeeding only means processing ran; the verdict lands in the validation interface."</p>
+  </aside>
+</section>
+
+<!-- 28 · Exercise 2 -->
+<section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Exercise 2</div>
+  <h2>Validate the first 170 blocks</h2>
+  <div class="two-col wide-left">
+    <div class="exercise-box">
+      <h3>Tasks · <code>src/bin/ex2_import.rs</code></h3>
+      <ol class="mt-s">
+        <li>Read <code>data/blocks.hex</code>, one mainnet block per line (heights 1–170)</li>
+        <li>Decode each line into a <code>Block</code> and call <code>process_block</code></li>
+        <li>Count <code>NewBlock</code> / <code>Duplicate</code> / <code>Rejected</code></li>
+        <li>Register <code>block_connected</code> and print each height as it joins the chain</li>
+        <li>Print the final tip height and hash</li>
+      </ol>
+      <div class="run">cargo run --bin ex2_import</div>
+    </div>
+    <div class="center" style="gap:26px">
+      <span class="timer-badge">⏱ 10 min</span>
+      <div class="callout green"><span class="label">Expect</span>170 × <code>NewBlock</code>, 0 rejected, tip at height <b>170</b>.</div>
+      <div class="callout blue"><span class="label">Bonus</span>Flip one byte of block 100 and see what <code>block_checked</code> says.</div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>No P2P, no RPC: just bytes into the engine. These blocks get the full treatment: PoW, merkle root, coinbase rules, and script checks once there are real spends.</p>
+    <p>The bonus is fun: corrupting a transaction byte gives a merkle mismatch, reported as <code>Mutated</code>.</p>
+  </aside>
+</section>
+
+<!-- 29 · Walking the chain -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Data access</div>
+  <h2>Walking the chain</h2>
+  <div class="two-col wide-right">
+    <div>
+      <ul class="list small">
+        <li><code>active_chain()</code> is a <b>live view</b>. Re-query after processing</li>
+        <li><code>iter()</code> goes genesis → tip</li>
+        <li><code>prev()</code> and <code>ancestor(h)</code> walk backwards. There is <b>no <code>next()</code></b>, so use <code>at_height(h + 1)</code></li>
+        <li><code>BlockTreeEntry</code> has no <code>PartialEq</code>. Compare <code>block_hash()</code></li>
+        <li><code>best_entry()</code> is the most-work <b>header</b>, which may be ahead of the tip</li>
+      </ul>
+    </div>
+    <div class="code" data-title="chain">
+      <script type="text/plain" data-lang="rust">
+        let chain = chainman.active_chain();
+        println!("height {}", chain.height());
+
+        let genesis = chain.at_height(0).unwrap();
+        let tip = chain.tip();
+
+        for entry in chain.iter() {
+            println!("{:>4}  {}", entry.height(), entry.block_hash());
+        }
+
+        let parent = tip.prev();          // Option<BlockTreeEntry>
+        let h100   = tip.ancestor(100);    // skip-list jump, O(log n)
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p><code>BlockTreeEntry</code> wraps Core's CBlockIndex: height, hash, header, pointer to parent. It's cheap and Copy.</p>
+    <p>The lifetime <code>'a</code> ties entries to the ChainstateManager, so you can't keep them after dropping it.</p>
+  </aside>
+</section>
+
+<!-- 30 · Reading blocks and undo -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Data access</div>
+  <h2>Blocks and undo data</h2>
+  <div class="two-col wide-right">
+    <div>
+      <p style="font-size:30px"><b>Undo data</b> (<code>rev*.dat</code>) stores every coin a block spent: value, script, height and coinbase flag.</p>
+      <div class="callout red mt"><span class="label">Off by one</span>Undo data <b>skips the coinbase</b>: <code>spent[i]</code> belongs to <code>tx[i + 1]</code>.</div>
+      <p class="muted mt" style="font-size:26px">Inputs expose only the outpoint and sequence. For scriptSig or witness, re-parse the tx with <code>rust-bitcoin</code>.</p>
+    </div>
+    <div class="code" data-title="read">
+      <script type="text/plain" data-lang="rust" data-hl="7">
+        use bitcoinkernel::prelude::*;
+
+        let entry = chain.at_height(170).unwrap();
+        let block = chainman.read_block_data(&entry)?;
+        let spent = chainman.read_spent_outputs(&entry)?;
+
+        for (tx, coins) in block.transactions().skip(1).zip(spent.iter()) {
+            for coin in coins.coins() {
+                println!(
+                    "{} spends {} sat created at height {}",
+                    tx.txid(),
+                    coin.output().value(),
+                    coin.confirmation_height(),
+                );
+            }
+        }
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Undo data is what makes the kernel great for indexers: for every input you get the previous output without a txindex or a UTXO lookup.</p>
+    <p>That <code>.skip(1)</code> is the most common bug I see. Coinbase inputs spend nothing, so undo has no entry for them.</p>
+  </aside>
+</section>
+
+<!-- 31 · Exercise 3 -->
+<section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Exercise 3</div>
+  <h2>Explore the chain you built</h2>
+  <div class="two-col wide-left">
+    <div class="exercise-box">
+      <h3>Tasks · <code>src/bin/ex3_walk.rs</code></h3>
+      <ol class="mt-s">
+        <li>Reopen the chainstate from exercise 2 (no wipe!)</li>
+        <li>Iterate the active chain: print height, hash and tx count</li>
+        <li>Sum the output value of every block's coinbase</li>
+        <li>Find the <b>first block with a non-coinbase transaction</b></li>
+        <li>For it, print each input's spent value from undo data</li>
+      </ol>
+      <div class="run">cargo run --bin ex3_walk</div>
+    </div>
+    <div class="center" style="gap:26px">
+      <span class="timer-badge">⏱ 10 min</span>
+      <div class="callout green"><span class="label">Expect</span>Block <b>170</b>: one input spending <b>50 BTC</b> created at height <b>9</b>.</div>
+      <p class="muted" style="font-size:26px">Total issued so far: 171 × 50 BTC = 8,550 BTC.</p>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Block 170, January 12, 2009: the first person-to-person bitcoin transaction. Satoshi sends 10 BTC to Hal Finney.</p>
+    <p>The input spends the coinbase of block 9, 50 BTC. Outputs are 10 BTC to Hal and 40 BTC back to Satoshi.</p>
+    <p>The 8,550 BTC counts genesis. Note that the genesis coinbase output is unspendable and not in the UTXO set.</p>
+  </aside>
+</section>
+
+<!-- 32 · Script verification -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Context-free validation</div>
+  <h2>Script verification</h2>
+  <div class="two-col wide-right">
+    <div>
+      <table class="kv" style="font-size:24px">
+        <tr><td><code>VERIFY_P2SH</code></td><td>BIP16</td></tr>
+        <tr><td><code>VERIFY_DERSIG</code></td><td>BIP66 strict DER</td></tr>
+        <tr><td><code>VERIFY_NULLDUMMY</code></td><td>BIP147</td></tr>
+        <tr><td><code>VERIFY_CHECKLOCKTIMEVERIFY</code></td><td>BIP65</td></tr>
+        <tr><td><code>VERIFY_CHECKSEQUENCEVERIFY</code></td><td>BIP112</td></tr>
+        <tr><td><code>VERIFY_WITNESS</code></td><td>BIP141/143</td></tr>
+        <tr><td><code>VERIFY_TAPROOT</code></td><td>BIP341/342</td></tr>
+      </table>
+      <p class="muted mt-s" style="font-size:24px"><code>None</code> means <code>VERIFY_ALL</code>. Taproot needs <b>every</b> spent output in the precomputed data.</p>
+    </div>
+    <div class="code" data-title="verify">
+      <script type="text/plain" data-lang="rust" data-hl="9-16">
+        use bitcoinkernel::{verify, PrecomputedTransactionData, TxOut,
+                            VERIFY_ALL_PRE_TAPROOT};
+
+        // one TxOut per input, e.g. from undo data
+        let spent: Vec<TxOut> =
+            coins.coins().map(|c| c.output().to_owned()).collect();
+        let txdata = PrecomputedTransactionData::new(&tx, &spent)?;
+
+        verify(
+            &spent[0].script_pubkey(),     // scriptPubKey being spent
+            Some(spent[0].value()),        // amount (segwit)
+            &tx,                           // spending tx
+            0,                             // input index
+            Some(VERIFY_ALL_PRE_TAPROOT),  // flags: u32 in 0.2.1
+            &txdata,
+        )?;
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>This is the libbitcoinconsensus use case, done properly. You need the spent output's scriptPubKey and amount, the spending tx, and the input index.</p>
+    <p>PrecomputedTransactionData caches sighash midstates. For Taproot you must pass all spent outputs because BIP341 signatures commit to all of them.</p>
+    <p>On master the flags become a typed <code>ScriptVerificationFlags</code>. Another reason to pin versions.</p>
+  </aside>
+</section>
+
+<!-- 33 · Exercise 4 -->
+<section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Exercise 4</div>
+  <h2>Verify Satoshi's signature yourself</h2>
+  <div class="two-col wide-left">
+    <div class="exercise-box">
+      <h3>Tasks · <code>src/bin/ex4_verify.rs</code></h3>
+      <ol class="mt-s">
+        <li>Read block 170 and its undo data from your chainstate</li>
+        <li>Take transaction #1 (Satoshi → Hal) and its spent coin</li>
+        <li>Build <code>PrecomputedTransactionData</code> and call <code>verify</code> on input 0</li>
+        <li>Tamper: change an output value in the raw tx and verify again</li>
+      </ol>
+      <div class="run">cargo run --bin ex4_verify</div>
+    </div>
+    <div class="center" style="gap:26px">
+      <span class="timer-badge">⏱ 10 min</span>
+      <div class="callout green"><span class="label">Expect</span>Original: <code>Ok(())</code>. Tampered: <code>Err(ScriptVerify(Invalid))</code>.</div>
+      <p class="muted" style="font-size:26px">Your code just checked an ECDSA signature Satoshi made on 12 Jan 2009. <b>You trusted no one.</b></p>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>The spent output is a P2PK script: Satoshi's pubkey followed by OP_CHECKSIG. The scriptSig is just the signature.</p>
+    <p>Changing any output changes the sighash, so the signature no longer matches. That's the whole security model in one error.</p>
+  </aside>
+</section>
+
+<!-- 34 · Keep in mind 1 -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Things to keep in mind · 1/2</div>
+  <h2>Lifecycle &amp; threads</h2>
+  <div class="grid-3">
+    <div class="card warn">
+      <h3>Never panic in a callback</h3>
+      <p>Callbacks are called from C++. A panic unwinds across <code>extern "C"</code>. Catch errors and send them over a channel.</p>
+    </div>
+    <div class="card">
+      <h3>Callbacks run on kernel threads</h3>
+      <p>They must be <code>Send + Sync + 'static</code>. Use <code>Arc</code>, atomics and channels. Don't block for long.</p>
+    </div>
+    <div class="card">
+      <h3>Shutdown order</h3>
+      <p>Drop the <code>ChainstateManager</code> (it flushes to disk), then the <code>Context</code>. Keep the <code>Logger</code> alive until the end.</p>
+    </div>
+    <div class="card">
+      <h3>Exclusive datadir</h3>
+      <p>Stop bitcoind or copy its datadir first. Two processes on the same LevelDB will not end well.</p>
+    </div>
+    <div class="card">
+      <h3>Fatal means fatal</h3>
+      <p>On <code>fatal_error</code> or <code>flush_error</code>, tear down the context and chainstate manager. Don't try to continue.</p>
+    </div>
+    <div class="card">
+      <h3><code>Chain</code> isn't <code>Send</code></h3>
+      <p><code>ChainstateManager</code> is <code>Send + Sync</code>, but the <code>Chain</code> view is not. Re-fetch it on each thread.</p>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>These are the things that bite people in real projects, not in toy examples.</p>
+    <p>Panic across FFI is undefined behaviour or an abort depending on the Rust version. Wrap callback bodies defensively.</p>
+  </aside>
+</section>
+
+<!-- 35 · Keep in mind 2 -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <div class="kicker">Things to keep in mind · 2/2</div>
+  <h2>Data &amp; API</h2>
+  <div class="grid-3">
+    <div class="card warn">
+      <h3>Unstable API</h3>
+      <p>Pin <code>bitcoinkernel = "=x.y.z"</code>. Signatures change between releases, e.g. <code>verify</code> flags from <code>u32</code> to a typed struct.</p>
+    </div>
+    <div class="card">
+      <h3>Stored ≠ valid</h3>
+      <p><code>ProcessBlockResult::NewBlock</code> is about storage. Use <code>block_checked</code> for the verdict.</p>
+    </div>
+    <div class="card">
+      <h3>Undo skips coinbase</h3>
+      <p><code>spent_outputs[i]</code> ↔ <code>transactions[i + 1]</code>.</p>
+    </div>
+    <div class="card">
+      <h3>Reindex rules</h3>
+      <p><code>wipe_db(true, false)</code> is invalid. After any wipe, call <code>import_blocks()</code> first.</p>
+    </div>
+    <div class="card">
+      <h3>Limited tx accessors</h3>
+      <p>No scriptSig or witness getters yet. Pair with <code>rust-bitcoin</code> via <code>consensus_encode()</code>.</p>
+    </div>
+    <div class="card">
+      <h3>Fixed cache</h3>
+      <p>DB cache size isn't configurable from Rust (0.2.1). In-memory chainstate means the whole UTXO set in RAM.</p>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>If you remember one thing: pin your versions and read the changelog. The API is still moving, which is also why your feedback matters.</p>
+  </aside>
+</section>
+
+<!-- =====================================================================
+     PART 3 · ECOSYSTEM
+     ===================================================================== -->
+
+<!-- 36 · Section -->
+<section class="slide section-slide" data-section="03 · Built on the kernel" data-no-chrome>
+  <div class="section-num">03</div>
+  <div class="kicker">Part three</div>
+  <h1>Built on Bitcoinkernel</h1>
+  <p class="lead">Real projects using the engine today.</p>
+  <aside class="notes"><p>About 15 minutes including Q&amp;A.</p></aside>
+</section>
+
+<!-- 37 · kernel-node -->
+<section class="slide" data-section="03 · Built on the kernel">
+  <div class="kicker">Rust · sedited</div>
+  <div class="project-head"><h2 style="margin:0">kernel-node</h2><span class="pill accent">Rust</span><span class="pill">experimental</span></div>
+  <div class="repo mt-s"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>github.com/sedited/kernel-node</div>
+  <div class="two-col mt">
+    <div>
+      <p class="quote" style="font-size:36px">"An experimental bitcoin node written in Rust using the libbitcoinkernel library."</p>
+      <ul class="list small mt">
+        <li>Validates blocks. Does not serve them to the network</li>
+        <li>Core-compatible datadir: point it at an existing one to skip ahead</li>
+        <li>Built-in <b>silent payments</b> scanning (<code>--sp-keys-file</code>)</li>
+        <li>Daemon mode and an interactive setup wizard</li>
+      </ul>
+    </div>
+    <div>
+      <div class="code" data-title="run">
+        <script type="text/plain" data-lang="bash">
+          cargo run --bin node --release -- --network signet
+
+          # options
+          --datadir <path>   --connect <peer>
+          --daemon           --sp-keys-file <file>
+
+          # guided setup
+          cargo run --bin wizard
+        </script>
+      </div>
+      <div class="callout mt">Written by the author of the C API and the Rust bindings, it shows off the kernel API as it is today.</div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>sedited's own node. Its explicit goal is to showcase the kernel API. It's "not meant to be particularly performant, or robust against misbehaving peers".</p>
+    <p>Silent payments scanning is a great fit: undo data gives you the input public keys you need without extra lookups.</p>
+  </aside>
+</section>
+
+<!-- 38 · bitcoinkernel-node (C++) -->
+<section class="slide" data-section="03 · Built on the kernel">
+  <div class="kicker">C++23 · yuvicc</div>
+  <div class="project-head"><h2 style="margin:0">bitcoinkernel-node</h2><span class="pill accent">C++23</span><span class="pill">btck:: wrapper</span></div>
+  <div class="repo mt-s"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>github.com/yuvicc/bitcoinkernel-node</div>
+  <div class="two-col wide-right mt">
+    <div>
+      <svg class="diagram" viewBox="0 0 700 470" aria-label="sync pipeline">
+        <defs><marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f7931a"/></marker></defs>
+        <rect x="0" y="0" width="190" height="90" rx="14" class="box-blue"/><text x="95" y="54" text-anchor="middle" class="t-md">peer</text>
+        <rect x="0" y="190" width="190" height="90" rx="14" class="box-blue"/><text x="95" y="244" text-anchor="middle" class="t-md">peer</text>
+        <text x="95" y="370" text-anchor="middle" class="t-sm">DNS seeds →</text>
+        <text x="95" y="400" text-anchor="middle" class="t-sm">addr manager</text>
+
+        <path d="M190 45 L260 45" class="line-accent" marker-end="url(#arr3)"/>
+        <path d="M190 235 L260 235" class="line-accent" marker-end="url(#arr3)"/>
+
+        <rect x="270" y="0" width="190" height="90" rx="14" class="box"/><text x="365" y="40" text-anchor="middle" class="t-mono">headers</text><text x="365" y="70" text-anchor="middle" class="t-sm">binary_p2p</text>
+        <rect x="270" y="190" width="190" height="90" rx="14" class="box"/><text x="365" y="230" text-anchor="middle" class="t-mono">block</text><text x="365" y="260" text-anchor="middle" class="t-sm">binary_p2p</text>
+
+        <path d="M460 45 L520 45" class="line-accent" marker-end="url(#arr3)"/>
+        <path d="M460 235 L520 235" class="line-accent" marker-end="url(#arr3)"/>
+
+        <rect x="530" y="0" width="170" height="280" rx="16" class="box-accent"/>
+        <text x="615" y="120" text-anchor="middle" class="t-md t-accent" style="font-weight:600">kernel</text>
+        <text x="615" y="155" text-anchor="middle" class="t-sm">btck::</text>
+        <text x="615" y="180" text-anchor="middle" class="t-sm">Chainstate</text>
+        <text x="615" y="205" text-anchor="middle" class="t-sm">Manager</text>
+
+        <rect x="270" y="330" width="430" height="120" rx="14" class="box-soft"/>
+        <text x="290" y="375" class="t-sm">--chain regtest|signet|…  --peer</text>
+        <text x="290" y="410" class="t-sm">--daemon · debug.log · SIGINT flush</text>
+      </svg>
+    </div>
+    <div class="code sm" data-title="src/node/sync.cpp (abridged)">
+      <script type="text/plain" data-lang="cpp" data-hl="3,9,10-11">
+        btck::BlockHeader header{serialized};
+        auto state =
+            node.chainman().ProcessBlockHeader(header);
+        if (state.GetValidationMode() != btck::ValidationMode::VALID)
+            return reject_peer(state);
+
+        btck::Block block{serialized};
+        bool new_block = false;
+        node.chainman().ProcessBlock(block, &new_block);
+        // ProcessBlock succeeding only means processing ran;
+        // the verdict lands in the validation interface.
+        if (auto failure = node.validation().take_failure())
+            return reject_peer(*failure);
+      </script>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>My own minimal full node in C++23. It connects to a peer, syncs headers then blocks, and hands every header and block to the kernel.</p>
+    <p>P2P message serialization comes from my <code>binary_p2p</code> library; the kernel is used via the header-only <code>btck::</code> C++ wrapper.</p>
+    <p>Features: DNS seeds, an address manager, clean shutdown on SIGINT/SIGTERM with a chainstate flush, <code>--daemon</code> and a debug.log. Tested on signet and regtest.</p>
+    <p>~1,200 lines of node code. The kernel does the heavy lifting.</p>
+  </aside>
+</section>
+
+<!-- 39 · Floresta / Utreexo -->
+<section class="slide" data-section="03 · Built on the kernel">
+  <div class="kicker">Rust · Utreexo</div>
+  <div class="project-head"><h2 style="margin:0">Floresta &amp; Utreexo</h2><span class="pill accent">rust-bitcoinkernel</span></div>
+  <div class="repo mt-s"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>github.com/getfloresta/Floresta</div>
+  <div class="grid-3 mt">
+    <div class="card">
+      <h3>Utreexo</h3>
+      <p>Replace the multi-GB UTXO set with a hash-based <b>accumulator</b>: a forest of Merkle roots that fits in about a kilobyte. Inclusion proofs travel with blocks and transactions.</p>
+      <p class="dim" style="font-size:22px;margin-top:14px">Tadge Dryja, MIT DCI, 2019</p>
+    </div>
+    <div class="card accent">
+      <h3>Floresta</h3>
+      <p>A lightweight, embeddable Utreexo-powered full node in Rust, with an integrated Electrum server.</p>
+      <p class="mt-s" style="font-size:25px;color:var(--text)">"Instead of reimplementing a Bitcoin Script interpreter, we use <code>rust-bitcoinkernel</code>…"</p>
+    </div>
+    <div class="card">
+      <h3>Why #35187 matters</h3>
+      <p><code>btck_chainstate_manager_validate_block</code> takes a <b>callback that supplies the spent coins</b>, so the caller provides the UTXOs. That's exactly the Utreexo model.</p>
+      <p class="dim" style="font-size:22px;margin-top:14px">Open PR by sedited</p>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Utreexo nodes don't keep a UTXO database. They keep accumulator roots and verify proofs that the spent outputs exist.</p>
+    <p>Floresta already delegates script validation to the kernel via rust-bitcoinkernel, which makes it bug-compatible with Core where it matters most.</p>
+    <p>Today the kernel's full block validation assumes it owns the UTXO set. PR #35187 adds a path where <i>you</i> supply the coins a block spends via a callback. It runs CheckBlock, contextual checks and ConnectBlock against those coins. That's the missing piece for Utreexo, and also useful for SwiftSync-style designs.</p>
+  </aside>
+</section>
+
+<!-- 40 · More in the wild -->
+<section class="slide" data-section="03 · Built on the kernel">
+  <div class="kicker">In the wild</div>
+  <h2>More users of the kernel</h2>
+  <div class="grid-3">
+    <div class="card"><span class="num">Rust · L2</span><h3>Bark</h3><p>Second's Ark implementation uses the kernel for validation.</p></div>
+    <div class="card"><span class="num">Swift · iOS</span><h3>Kernel-i-node</h3><p>A full node on an iPhone, with the kernel embedded in a mobile app.</p></div>
+    <div class="card"><span class="num">Python</span><h3>py-bitcoinkernel</h3><p>Chain analysis and indexers. Our previous workshop validated blocks 0–10 from a REST API.</p></div>
+    <div class="card"><span class="num">Java · FFM</span><h3>bitcoinkernel-jdk</h3><p>Project Panama bindings (JDK 25+) for the JVM ecosystem.</p></div>
+    <div class="card"><span class="num">Rust</span><h3>Silent payments scanner</h3><p>The example in rust-bitcoinkernel: scan blocks using undo data.</p></div>
+    <div class="card"><span class="num">Tooling</span><h3>kernel-bindings-tests</h3><p>Cross-language conformance suite so all bindings agree.</p></div>
+  </div>
+  <aside class="notes">
+    <p>The tracking issue #27587 keeps a list of known users. Bark and Kernel-i-node are listed there.</p>
+  </aside>
+</section>
+
+<!-- 41 · What's next -->
+<section class="slide" data-section="03 · Built on the kernel">
+  <div class="kicker">Roadmap</div>
+  <h2>What's next</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="muted" style="font-size:24px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:22px">In flight</h3>
+      <table class="kv" style="font-size:25px">
+        <tr><td><b>#35187</b></td><td>Block validation without a full UTXO set</td></tr>
+        <tr><td><b>#35646</b></td><td>Error handling via <code>util::Expected</code> (RFC)</td></tr>
+        <tr><td><b>#35641</b></td><td>Script debugging</td></tr>
+        <tr><td><b>#32317</b></td><td>Separate UTXO set access from validation</td></tr>
+        <tr><td><b>#32427</b></td><td>Block tree DB migration away from LevelDB</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3 class="muted" style="font-size:24px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:22px">How you can help</h3>
+      <ul class="checks">
+        <li><b>Review</b> kernel PRs. Start from <b>#27587</b></li>
+        <li><b>Build</b> something and report friction (<b>#31878</b>)</li>
+        <li><b>Improve bindings</b>: docs, examples, missing accessors</li>
+        <li><b>Join</b> the Bitcoinkernel Club at Bitshala</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>The API is shaped by its users. If something was awkward today, that's a data point worth an issue.</p>
+    <p>Reviewing kernel PRs is one of the best ways into Bitcoin Core: well-scoped changes with clear goals.</p>
+  </aside>
+</section>
+
+<!-- 42 · Thanks / resources -->
+<section class="slide" data-section="Resources" data-no-chrome>
+  <div class="kicker">Thank you</div>
+  <h1 style="font-size:110px;margin-bottom:48px">Questions?</h1>
+  <div class="two-col wide-left">
+    <table class="kv" style="font-size:25px">
+      <tr><td>Workshop</td><td class="mono">github.com/yuvicc/bitcoinkernel-workshop</td></tr>
+      <tr><td>Rust bindings</td><td class="mono">github.com/sedited/rust-bitcoinkernel</td></tr>
+      <tr><td>Tracking issue</td><td class="mono">bitcoin/bitcoin#27587</td></tr>
+      <tr><td>C API PR</td><td class="mono">bitcoin/bitcoin#30595</td></tr>
+      <tr><td>Blog</td><td class="mono">thecharlatan.ch/Kernel</td></tr>
+      <tr><td>Docs</td><td class="mono">yuvicc.dev/bitcoinkernel-docs</td></tr>
+    </table>
+    <div class="center" style="align-items:center;gap:20px">
+      <div class="qr" data-qr="https://github.com/yuvicc/bitcoinkernel-workshop"></div>
+      <div class="dim" style="font-size:22px">slides + exercises</div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Thank everyone. Point to the repo for slides and solutions.</p>
+    <p>"The Bitcoin Core Kernel" blog post by sedited is the best long-form background reading.</p>
+  </aside>
+</section>
+
+</div><!-- /.stage -->
+</div><!-- /.deck -->
+</body>
+</html>
