@@ -603,19 +603,20 @@
       <div class="callout mt">Callbacks run on the <b>kernel's own thread</b>. Keep them short and send work elsewhere with a channel.</div>
     </div>
     <div class="code" data-title="validation callbacks">
-      <script type="text/plain" data-lang="rust" data-hl="4-6">
-        use bitcoinkernel::{prelude::*, ValidationMode};
+      <script type="text/plain" data-lang="rust" data-hl="5-7">
+        use bitcoinkernel::{prelude::*, Block, BlockTreeEntry,
+                            BlockValidationStateRef, ValidationMode};
 
         builder.validation(|v| {
-            v.register_block_checked(|block, state| {
+            v.register_block_checked(|block: Block, state: BlockValidationStateRef<'_>| {
                 if state.mode() != ValidationMode::Valid {
                     eprintln!("✗ {} {:?}", block.hash(), state.result());
                 }
             });
-            v.register_block_connected(|block, entry| {
+            v.register_block_connected(|block: Block, entry: BlockTreeEntry<'_>| {
                 println!("+ #{} {}", entry.height(), block.hash());
             });
-            v.register_block_disconnected(|block, entry| {
+            v.register_block_disconnected(|block: Block, entry: BlockTreeEntry<'_>| {
                 println!("- #{} {}", entry.height(), block.hash());
             });
         })
@@ -626,6 +627,7 @@
     <p>Notifications are about <i>progress</i>. The validation interface is about <i>verdicts</i> and <i>chain changes</i>.</p>
     <p><code>block_checked</code> is where you learn <b>why</b> a block was rejected: <code>state.result()</code> gives a <code>BlockValidationResult</code> such as Consensus, Mutated, MissingPrev, TimeFuture…</p>
     <p>Gotcha: for new_pow_valid_block the closure takes <code>(entry, block)</code>, entry first. The others take <code>(block, entry)</code>.</p>
+    <p>The closure parameter types must be written out. The callbacks are higher-ranked over a lifetime, so with a bare <code>|block, state|</code> rustc can't infer them and fails with "type annotations needed".</p>
   </aside>
 </section>
 
