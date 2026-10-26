@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bitcoinkernel Workshop</title>
-  <meta name="description" content="Bitcoinkernel workshop: Bitcoin Core's validation engine as a library, hands-on with rust-bitcoinkernel, and the projects built on it. BOSS Summit Jaipur.">
+  <meta name="description" content="Bitcoinkernel workshop: Bitcoin Core's validation engine as a library, a walkthrough of rust-bitcoinkernel, and the projects built on it. BOSS Summit Jaipur.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23f7931a'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3EK%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
 <section class="slide title-slide" data-section="Workshop" data-no-chrome>
   <div class="kicker">BOSS Summit Jaipur · Workshop</div>
   <h1>Bitcoinkernel</h1>
-  <p class="lead">Bitcoin Core's validation engine as a library.<br><span class="muted">Hands-on with <code>rust-bitcoinkernel</code>.</span></p>
+  <p class="lead">Bitcoin Core's validation engine as a library.<br><span class="muted">A walkthrough of <code>rust-bitcoinkernel</code>.</span></p>
   <div class="title-meta">
     <div><b>yuvicc</b>Bitcoin Core contributor</div>
     <div><b style="display:inline">github.com/yuvicc</b>/bitcoinkernel-workshop</div>
@@ -110,7 +110,7 @@
     <div class="card">
       <span class="num">02</span>
       <h3>rust-bitcoinkernel</h3>
-      <p>The API, the mental model and the sharp edges. Four exercises: from an empty context to verifying Satoshi's signature.</p>
+      <p>The API, the mental model and the sharp edges, walked through in code: from an empty context to verifying Satoshi's signature.</p>
     </div>
     <div class="card">
       <span class="num">03</span>
@@ -119,8 +119,8 @@
     </div>
   </div>
   <aside class="notes">
-    <p>Three parts. The middle one is the longest and is hands-on, so laptops out.</p>
-    <p>If anyone is stuck on the build, pair them with a neighbour. The exercises only need the crate to compile once.</p>
+    <p>Three parts. The middle one is the longest: a live walkthrough of the workshop crate.</p>
+    <p>People can follow along on their laptops, but nobody has to: every walkthrough slide shows the code and its output.</p>
   </aside>
 </section>
 
@@ -304,7 +304,7 @@
   </div>
   <aside class="notes">
     <p>The kernel decides <i>what is valid</i> and remembers <i>what the chain is</i>. Everything about <i>how you get data</i> and <i>how you present it</i> is yours.</p>
-    <p>That's the opportunity: bring your own P2P stack (or none at all, as in our exercises), your own indexes, your own UI.</p>
+    <p>That's the opportunity: bring your own P2P stack (or none at all, as in today's walkthrough), your own indexes, your own UI.</p>
   </aside>
 </section>
 
@@ -466,7 +466,7 @@
     </div>
   </div>
   <aside class="notes">
-    <p>These three modes cover almost every use case. The exercises today touch all three: exercise 2 is full validation, exercise 3 is data access, and exercise 4 is context-free script verification.</p>
+    <p>These three modes cover almost every use case. The walkthrough touches all three: <code>validate_bundled_blocks</code> is full validation, <code>explore_chain</code> is data access, and <code>verify_satoshi_signature</code> is context-free script verification.</p>
   </aside>
 </section>
 
@@ -665,24 +665,35 @@
   </aside>
 </section>
 
-<!-- 25 · Exercise 1 -->
-<section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
+<!-- 25 · show_tip -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
   <h2>Start the kernel</h2>
-  <div class="two-col wide-left">
-    <div class="exercise-box">
-      <ol class="mt-s">
-        <li>Create a <code>Logger</code> that prints kernel messages with a prefix</li>
-        <li>Build a <b>mainnet</b> <code>Context</code></li>
-        <li>Register <code>block_tip</code>, <code>progress</code> and <code>fatal_error</code> notifications</li>
-        <li>Open a <code>ChainstateManager</code> in <code>./kernel-data</code> and print the tip height</li>
-      </ol>
+  <div class="two-col wide-right">
+    <div>
+      <ul class="list small">
+        <li><code>start_logger</code>: the <code>Log</code> impl, bound to <code>_logger</code> so it lives to the end</li>
+        <li><code>build_context</code>: mainnet, notifications and validation callbacks</li>
+        <li><code>open_chainstate</code>: a <code>ChainstateManager</code> in <code>kernel-data/</code></li>
+      </ul>
+      <div class="callout green mt"><span class="label">Output</span>Kernel log lines, then <code>tip height: 0</code>. A fresh chainstate already knows genesis.</div>
     </div>
-    <div class="center" style="gap:26px">
-      <div class="callout green"><span class="label">Expect</span>Kernel log lines, then <code>tip height: 0</code>. A fresh chainstate already knows genesis.</div>
+    <div class="code" data-title="src/lib.rs · show_tip">
+      <script type="text/plain" data-lang="rust" data-hl="2-4">
+        pub fn show_tip() -> Result<()> {
+            let _logger = start_logger()?;
+            let context = build_context()?;
+            let chainman = open_chainstate(&context)?;
+
+            let tip = chainman.active_chain().tip();
+            println!("tip height: {}", tip.height());
+            Ok(())
+        }
+      </script>
     </div>
   </div>
   <aside class="notes">
-    <p>Walk around. The common mistakes are forgetting to bind the logger, and forgetting <code>use bitcoinkernel::prelude::*</code>.</p>
+    <p>Everything from the last three slides, wired together. The three helpers are the code we just saw.</p>
+    <p>Declaration order is shutdown order: locals drop in reverse, so the chainstate manager goes first, then the context, and the logger last.</p>
     <p>Point out the kernel log lines about opening LevelDB and loading the block index.</p>
   </aside>
 </section>
@@ -756,27 +767,41 @@
   </aside>
 </section>
 
-<!-- 28 · Exercise 2 -->
-<section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
+<!-- 28 · validate_bundled_blocks -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
   <h2>Validate the first 170 blocks</h2>
-  <div class="two-col wide-left">
-    <div class="exercise-box">
-      <ol class="mt-s">
-        <li>Read the bundled mainnet blocks, one block per line (heights 1–170)</li>
-        <li>Decode each line into a <code>Block</code> and call <code>process_block</code></li>
-        <li>Count <code>NewBlock</code> / <code>Duplicate</code> / <code>Rejected</code></li>
-        <li>Register <code>block_connected</code> and print each height as it joins the chain</li>
-        <li>Print the final tip height and hash</li>
-      </ol>
+  <div class="two-col wide-right">
+    <div>
+      <div class="callout green"><span class="label">Output</span><code>+ #1</code> … <code>+ #170</code> from <code>block_connected</code>, then <code>new: 170 duplicate: 0 rejected: 0</code> and the tip at height <b>170</b>.</div>
+      <div class="callout blue mt"><span class="label">Bad block</span><code>reject_mutated_block</code> flips one byte of block 100. <code>block_checked</code> prints <code>Mutated</code> and the tip stays at <b>99</b>.</div>
     </div>
-    <div class="center" style="gap:26px">
-      <div class="callout green"><span class="label">Expect</span>170 × <code>NewBlock</code>, 0 rejected, tip at height <b>170</b>.</div>
-      <div class="callout blue"><span class="label">Bonus</span>Flip one byte of block 100 and see what <code>block_checked</code> says.</div>
+    <div class="code sm" data-title="src/lib.rs · validate_bundled_blocks">
+      <script type="text/plain" data-lang="rust" data-hl="8-9">
+        pub fn validate_bundled_blocks() -> Result<()> {
+            let _ = fs::remove_dir_all(data_dir());
+
+            let _logger = start_logger()?;
+            let context = build_context()?;
+            let chainman = open_chainstate(&context)?;
+
+            let raw_blocks = load_blocks()?;
+            let counts = process_all(&chainman, &raw_blocks)?;
+            println!(
+                "new: {}  duplicate: {}  rejected: {}",
+                counts.new, counts.duplicate, counts.rejected
+            );
+
+            let tip = chainman.active_chain().tip();
+            println!("tip: #{} {}", tip.height(), tip.block_hash());
+            Ok(())
+        }
+      </script>
     </div>
   </div>
   <aside class="notes">
-    <p>No P2P, no RPC: just bytes into the engine. These blocks get the full treatment: PoW, merkle root, coinbase rules, and script checks once there are real spends.</p>
-    <p>The bonus is fun: corrupting a transaction byte gives a merkle mismatch, reported as <code>Mutated</code>.</p>
+    <p>No P2P, no RPC: just bytes into the engine. <code>load_blocks</code> decodes <code>data/blocks.hex</code>, and <code>process_all</code> is the <code>process_block</code> match from the previous slide.</p>
+    <p>These blocks get the full treatment: PoW, merkle root, coinbase rules, and script checks once there are real spends.</p>
+    <p>Then run <code>reject_mutated_block</code>: corrupting a transaction byte gives a merkle mismatch, reported as <code>Mutated</code>. <code>process_block</code> says <code>Rejected</code>, and the reason comes from <code>block_checked</code>.</p>
   </aside>
 </section>
 
@@ -852,25 +877,51 @@
   </aside>
 </section>
 
-<!-- 31 · Exercise 3 -->
-<section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
+<!-- 31 · explore_chain -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
   <h2>Explore the chain</h2>
-  <div class="two-col wide-left">
-    <div class="exercise-box">
-      <ol class="mt-s">
-        <li>Reopen the chainstate from exercise 2 (no wipe!)</li>
-        <li>Iterate the active chain: print height, hash and tx count</li>
-        <li>Sum the output value of every block's coinbase</li>
-        <li>Find the <b>first block with a non-coinbase transaction</b></li>
-        <li>For it, print each input's spent value from undo data</li>
-      </ol>
+  <div class="two-col wide-right">
+    <div>
+      <ul class="list small">
+        <li>Reopens the same chainstate. No wipe</li>
+        <li>Sums every coinbase output and finds the first block with a non-coinbase transaction</li>
+        <li>Reads that block's undo data to price each input</li>
+      </ul>
+      <div class="callout green mt"><span class="label">Output</span>Total issued: <b>8,550 BTC</b> (171 × 50). Block <b>170</b>: one input spending <b>50 BTC</b> created at height <b>9</b>.</div>
     </div>
-    <div class="center" style="gap:26px">
-      <div class="callout green"><span class="label">Expect</span>Block <b>170</b>: one input spending <b>50 BTC</b> created at height <b>9</b>.</div>
-      <p class="muted" style="font-size:26px">Total issued so far: 171 × 50 BTC = 8,550 BTC.</p>
+    <div class="code sm" data-title="src/lib.rs · explore_chain (abridged)">
+      <script type="text/plain" data-lang="rust" data-hl="3,14">
+        for entry in chain.iter() {
+            let block = chainman.read_block_data(&entry)?;
+            let coinbase = block.transaction(0)?;
+            issued += coinbase.outputs().map(|out| out.value()).sum::<i64>();
+
+            if first_spend.is_none() && block.transaction_count() > 1 {
+                first_spend = Some(entry);
+            }
+        }
+
+        let entry = first_spend.ok_or("no block with a non-coinbase transaction")?;
+        let block = chainman.read_block_data(&entry)?;
+        let spent = chainman.read_spent_outputs(&entry)?;
+        for (tx, coins) in block.transactions().skip(1).zip(spent.iter()) {
+            for (input, coin) in tx.inputs().zip(coins.coins()) {
+                println!(
+                    "{} spends {}:{} worth {} sat created at height {}",
+                    tx.txid(),
+                    input.outpoint().txid(),
+                    input.outpoint().index(),
+                    coin.output().value(),
+                    coin.confirmation_height(),
+                );
+            }
+        }
+      </script>
     </div>
   </div>
   <aside class="notes">
+    <p>The full function also prints height, hash and tx count for every block, and shows <code>prev()</code>, <code>ancestor(100)</code> and <code>best_entry()</code> on the tip.</p>
+    <p>Line 14 is the <code>.skip(1)</code> from the undo data slide: coinbase inputs spend nothing.</p>
     <p>Block 170, January 12, 2009: the first person-to-person bitcoin transaction. Satoshi sends 10 BTC to Hal Finney.</p>
     <p>The input spends the coinbase of block 9, 50 BTC. Outputs are 10 BTC to Hal and 40 BTC back to Satoshi.</p>
     <p>The 8,550 BTC counts genesis. Note that the genesis coinbase output is unspendable and not in the UTXO set.</p>
@@ -921,21 +972,37 @@
   </aside>
 </section>
 
-<!-- 33 · Exercise 4 -->
-<section class="slide exercise-slide" data-section="02 · rust-bitcoinkernel">
-  <h2>Verify Satoshi's signature yourself</h2>
-  <div class="two-col wide-left">
-    <div class="exercise-box">
-      <ol class="mt-s">
-        <li>Read block 170 and its undo data from your chainstate</li>
-        <li>Take transaction #1 (Satoshi → Hal) and its spent coin</li>
-        <li>Build <code>PrecomputedTransactionData</code> and call <code>verify</code> on input 0</li>
-        <li>Tamper: change an output value in the raw tx and verify again</li>
-      </ol>
+<!-- 33 · verify_satoshi_signature -->
+<section class="slide" data-section="02 · rust-bitcoinkernel">
+  <h2>Verify Satoshi's signature</h2>
+  <div class="two-col wide-right">
+    <div>
+      <ul class="list small">
+        <li>Transaction #1 of block 170 (Satoshi → Hal) and its spent coin from undo data</li>
+        <li><code>verify_input</code> wraps <code>PrecomputedTransactionData</code> and <code>verify</code> from the last slide</li>
+        <li>Then one satoshi is added to the first output and the tx is checked again</li>
+      </ul>
+      <div class="callout green mt"><span class="label">Output</span><code>original: Ok(())</code><br><code>tampered: Err(ScriptVerify(Invalid))</code></div>
+      <p class="muted mt-s" style="font-size:24px">An ECDSA signature Satoshi made on 12 Jan 2009, checked locally. <b>No one trusted.</b></p>
     </div>
-    <div class="center" style="gap:26px">
-      <div class="callout green"><span class="label">Expect</span>Original: <code>Ok(())</code>. Tampered: <code>Err(ScriptVerify(Invalid))</code>.</div>
-      <p class="muted" style="font-size:26px">Your code just checked an ECDSA signature Satoshi made on 12 Jan 2009. <b>You trusted no one.</b></p>
+    <div class="code sm" data-title="src/lib.rs · verify_satoshi_signature (abridged)">
+      <script type="text/plain" data-lang="rust" data-hl="7,13">
+        let entry = chain.at_height(170).ok_or("block 170 not in chain")?;
+        let block = chainman.read_block_data(&entry)?;
+        let spent = chainman.read_spent_outputs(&entry)?;
+
+        let tx = block.transaction(1)?.to_owned();
+        let coins = spent.transaction_spent_outputs(0)?;
+        let spent_outputs: Vec<TxOut> = coins.coins().map(|c| c.output().to_owned()).collect();
+        println!("original: {:?}", verify_input(&tx, &spent_outputs, 0));
+
+        let mut raw = tx.consensus_encode()?;
+        let offset = first_output_value_offset(&raw)?;
+        let value = i64::from_le_bytes(raw[offset..offset + 8].try_into()?);
+        raw[offset..offset + 8].copy_from_slice(&(value + 1).to_le_bytes());
+        let tampered = Transaction::new(&raw)?;
+        println!("tampered: {:?}", verify_input(&tampered, &spent_outputs, 0));
+      </script>
     </div>
   </div>
   <aside class="notes">

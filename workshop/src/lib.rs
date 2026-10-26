@@ -96,7 +96,7 @@ pub fn load_blocks() -> Result<Vec<Vec<u8>>> {
         .collect()
 }
 
-pub fn exercise_1() -> Result<()> {
+pub fn show_tip() -> Result<()> {
     let _logger = start_logger()?;
     let context = build_context()?;
     let chainman = open_chainstate(&context)?;
@@ -126,7 +126,7 @@ pub fn process_all(chainman: &ChainstateManager, raw_blocks: &[Vec<u8>]) -> Resu
     Ok(counts)
 }
 
-pub fn exercise_2() -> Result<()> {
+pub fn validate_bundled_blocks() -> Result<()> {
     let _ = fs::remove_dir_all(data_dir());
 
     let _logger = start_logger()?;
@@ -145,7 +145,7 @@ pub fn exercise_2() -> Result<()> {
     Ok(())
 }
 
-pub fn exercise_2_bonus() -> Result<()> {
+pub fn reject_mutated_block() -> Result<()> {
     let _ = fs::remove_dir_all(data_dir());
 
     let _logger = start_logger()?;
@@ -171,7 +171,7 @@ pub fn exercise_2_bonus() -> Result<()> {
     Ok(())
 }
 
-pub fn exercise_3() -> Result<()> {
+pub fn explore_chain() -> Result<()> {
     let _logger = start_logger()?;
     let context = build_context()?;
     let chainman = open_chainstate(&context)?;
@@ -262,7 +262,7 @@ pub fn first_output_value_offset(raw_tx: &[u8]) -> Result<usize> {
     Ok(pos)
 }
 
-pub fn exercise_4() -> Result<()> {
+pub fn verify_satoshi_signature() -> Result<()> {
     let _logger = start_logger()?;
     let context = build_context()?;
     let chainman = open_chainstate(&context)?;
@@ -270,7 +270,7 @@ pub fn exercise_4() -> Result<()> {
 
     let entry = chain
         .at_height(170)
-        .ok_or("block 170 not in chain, run exercise 2 first")?;
+        .ok_or("block 170 not in chain, run validate_bundled_blocks first")?;
     let block = chainman.read_block_data(&entry)?;
     let spent = chainman.read_spent_outputs(&entry)?;
 

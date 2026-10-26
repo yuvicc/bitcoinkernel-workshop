@@ -1,6 +1,6 @@
 # Bitcoinkernel Workshop BOSS Summit Jaipur
 
-Slides and hands-on exercises for a ~60 minute workshop on
+Slides and a walkthrough crate for a ~60 minute workshop on
 [libbitcoinkernel](https://github.com/bitcoin/bitcoin/issues/27587) using
 [rust-bitcoinkernel](https://github.com/sedited/rust-bitcoinkernel).
 
@@ -8,7 +8,7 @@ Slides and hands-on exercises for a ~60 minute workshop on
 2. **rust-bitcoinkernel**: the language wrapper bindings that we will be using to talk with the consensus code.
 3. **Built on the kernel**: kernel-node[github.com/kernel-node/kernel-node], bitcoinkernel-node[github.com/yuvicc/bitcoinkernel-node], Floresta/Utreexo, and more.
 
-## Pre-workshop tasks:
+## Building the walkthrough crate
 
 ```bash
 # prerequisites: cmake >= 3.15, a C++20 compiler (GCC >= 12.1 / Clang >= 17), Boost headers
@@ -19,7 +19,7 @@ cd workshop
 cargo build --bins
 ```
 
-`workshop/data/blocks.hex` holds mainnet blocks 1–170 (one raw block per line), so the exercises need no network.
+`workshop/data/blocks.hex` holds mainnet blocks 1–170 (one raw block per line), so the walkthrough needs no network.
 
 ## Layout
 
@@ -27,5 +27,5 @@ cargo build --bins
 index.html            slides (each <section class="slide"> has speaker notes in <aside class="notes">)
 assets/css/deck.css   design tokens, layouts, components, print styles
 assets/js/deck.js     navigation, steps, overview, speaker view, code rendering
-workshop/             Rust crate for the hands-on part
+workshop/             Rust crate for the rust-bitcoinkernel walkthrough
 ```
