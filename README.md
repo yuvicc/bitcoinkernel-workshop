@@ -14,6 +14,7 @@ Slides and a walkthrough crate for a ~60 minute workshop on
 # prerequisites: cmake >= 3.15, a C++20 compiler (GCC >= 12.1 / Clang >= 17), Boost headers
 sudo apt install build-essential cmake libboost-dev   # Debian/Ubuntu
 brew install cmake boost                               # macOS
+sudo pacman -S --needed base-devel cmake boost         # Arch Linnux
 
 cd workshop
 cargo build --bins
