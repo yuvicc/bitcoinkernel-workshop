@@ -731,7 +731,7 @@
   <aside class="notes">
     <p>data_dir holds the chainstate; blocks_dir holds blk/rev files. Both are created if missing. Note the block index DB always lives under data_dir/blocks/index regardless of blocks_dir.</p>
     <p><code>wipe_db(false, true)</code> rebuilds only the chainstate from the block files you already have. <code>(true, true)</code> is a full reindex.</p>
-    <p>Dropping the ChainstateManager flushes state to disk. More on shutdown order later.</p>
+    <p>Dropping the ChainstateManager flushes state to disk, so drop it before the Context and keep the Logger alive until the end.</p>
   </aside>
 </section>
 
@@ -1011,42 +1011,7 @@
   </aside>
 </section>
 
-<!-- 34 · Keep in mind 1 -->
-<section class="slide" data-section="02 · rust-bitcoinkernel">
-  <h2>Lifecycle &amp; threads</h2>
-  <div class="grid-3">
-    <div class="card warn">
-      <h3>Never panic in a callback</h3>
-      <p>Callbacks are called from C++. A panic unwinds across <code>extern "C"</code>. Catch errors and send them over a channel.</p>
-    </div>
-    <div class="card">
-      <h3>Callbacks run on kernel threads</h3>
-      <p>They must be <code>Send + Sync + 'static</code>. Use <code>Arc</code>, atomics and channels. Don't block for long.</p>
-    </div>
-    <div class="card">
-      <h3>Shutdown order</h3>
-      <p>Drop the <code>ChainstateManager</code> (it flushes to disk), then the <code>Context</code>. Keep the <code>Logger</code> alive until the end.</p>
-    </div>
-    <div class="card">
-      <h3>Exclusive datadir</h3>
-      <p>Stop bitcoind or copy its datadir first. Two processes on the same LevelDB will not end well.</p>
-    </div>
-    <div class="card">
-      <h3>Fatal means fatal</h3>
-      <p>On <code>fatal_error</code> or <code>flush_error</code>, tear down the context and chainstate manager. Don't try to continue.</p>
-    </div>
-    <div class="card">
-      <h3><code>Chain</code> isn't <code>Send</code></h3>
-      <p><code>ChainstateManager</code> is <code>Send + Sync</code>, but the <code>Chain</code> view is not. Re-fetch it on each thread.</p>
-    </div>
-  </div>
-  <aside class="notes">
-    <p>These are the things that bite people in real projects, not in toy examples.</p>
-    <p>Panic across FFI is undefined behaviour or an abort depending on the Rust version. Wrap callback bodies defensively.</p>
-  </aside>
-</section>
-
-<!-- 35 · Keep in mind 2 -->
+<!-- 35 · Keep in mind -->
 <section class="slide" data-section="02 · rust-bitcoinkernel">
   <h2>Data &amp; API</h2>
   <div class="grid-3">
